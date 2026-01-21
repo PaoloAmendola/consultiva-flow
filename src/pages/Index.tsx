@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LeadCard } from '@/components/leads/LeadCard';
 import { FilterBar } from '@/components/leads/FilterBar';
 import { mockLeads } from '@/data/mockData';
@@ -51,7 +51,7 @@ const Index = () => {
     : `${actionableLeads.length} ações pendentes`;
 
   return (
-    <AppLayout 
+    <DashboardLayout 
       title="Agora" 
       subtitle={subtitle}
     >
@@ -60,18 +60,18 @@ const Index = () => {
         activeFilters={filters}
       />
 
-      <div className="p-4 space-y-4">
+      <div className="grid gap-4 mt-4 md:grid-cols-2 xl:grid-cols-3">
         {actionableLeads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-4">
-              <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mb-4">
+              <svg className="w-10 h-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               Tudo em dia! 🎉
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground">
               Nenhuma ação pendente no momento
             </p>
           </div>
@@ -86,7 +86,7 @@ const Index = () => {
           ))
         )}
       </div>
-    </AppLayout>
+    </DashboardLayout>
   );
 };
 
