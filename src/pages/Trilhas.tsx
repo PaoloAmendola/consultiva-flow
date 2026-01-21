@@ -1,4 +1,4 @@
-import { AppLayout } from '@/components/layout/AppLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { mockTracks } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,11 +16,11 @@ const Trilhas = () => {
   };
 
   return (
-    <AppLayout 
+    <DashboardLayout 
       title="Trilhas de Nutrição" 
       subtitle={`${mockTracks.length} trilhas disponíveis`}
     >
-      <div className="p-4 space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {mockTracks.map(track => (
           <Card key={track.id}>
             <CardHeader>
@@ -71,7 +71,7 @@ const Trilhas = () => {
           </Card>
         ))}
       </div>
-    </AppLayout>
+    </DashboardLayout>
   );
 };
 

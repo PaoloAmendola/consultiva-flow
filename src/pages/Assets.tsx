@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { mockAssets } from '@/data/mockData';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -46,24 +46,24 @@ const Assets = () => {
   const assetTypes = ['PDF', 'VIDEO', 'IMAGEM', 'LINK', 'AUDIO'];
 
   return (
-    <AppLayout 
+    <DashboardLayout 
       title="Assets" 
       subtitle={`${mockAssets.length} materiais disponíveis`}
     >
-      {/* Search */}
-      <div className="p-4 border-b border-border bg-card/50 space-y-3">
-        <div className="relative">
+      {/* Search and filters */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar materiais..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="pl-10 bg-background"
+            className="pl-10 bg-secondary"
           />
         </div>
         
         {/* Type filters */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant={typeFilter === null ? 'default' : 'outline'}
             size="sm"
@@ -84,8 +84,8 @@ const Assets = () => {
         </div>
       </div>
 
-      {/* Asset list */}
-      <div className="p-4 space-y-3">
+      {/* Asset grid */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {filteredAssets.map(asset => {
           const Icon = getAssetIcon(asset.type);
           return (
@@ -115,7 +115,7 @@ const Assets = () => {
               
               <div className="flex gap-2 mt-4">
                 <Button 
-                  className="flex-1 btn-primary gap-2"
+                  className="flex-1 gap-2"
                   onClick={() => handleOpen(asset.url)}
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -131,20 +131,20 @@ const Assets = () => {
             </div>
           );
         })}
-
-        {filteredAssets.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-1">
-              Nenhum material encontrado
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Tente buscar por outro termo
-            </p>
-          </div>
-        )}
       </div>
-    </AppLayout>
+
+      {filteredAssets.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Search className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-1">
+            Nenhum material encontrado
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Tente buscar por outro termo
+          </p>
+        </div>
+      )}
+    </DashboardLayout>
   );
 };
 

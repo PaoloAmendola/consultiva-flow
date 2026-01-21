@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LeadCard } from '@/components/leads/LeadCard';
 import { mockLeads } from '@/data/mockData';
 import { format, addDays, isAfter, isBefore, startOfDay, endOfDay } from 'date-fns';
@@ -41,11 +41,11 @@ const Proximos = () => {
   const totalActions = groupedByDay.reduce((acc, day) => acc + day.leads.length, 0);
 
   return (
-    <AppLayout 
+    <DashboardLayout 
       title="Próximos 7 dias" 
       subtitle={`${totalActions} ações agendadas`}
     >
-      <div className="p-4 space-y-6">
+      <div className="space-y-6">
         {groupedByDay.map((day, index) => (
           <div key={day.label} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
             <div className="flex items-center gap-3 mb-3">
@@ -63,7 +63,7 @@ const Proximos = () => {
                 <p className="text-sm text-muted-foreground">Nenhuma ação agendada</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {day.leads.map(lead => (
                   <LeadCard key={lead.id} lead={lead} />
                 ))}
@@ -72,7 +72,7 @@ const Proximos = () => {
           </div>
         ))}
       </div>
-    </AppLayout>
+    </DashboardLayout>
   );
 };
 
