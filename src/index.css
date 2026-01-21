@@ -2,95 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Dark professional theme for sales CRM */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Orange/Amber for action and urgency */
+    --primary: 25 95% 53%;
+    --primary-foreground: 222 47% 6%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 222 47% 18%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Success green */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
 
-    --radius: 0.5rem;
+    /* Warning amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 6%;
 
-    --sidebar-background: 0 0% 98%;
+    /* Info blue */
+    --info: 217 91% 60%;
+    --info-foreground: 210 40% 98%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --border: 222 47% 18%;
+    --input: 222 47% 14%;
+    --ring: 25 95% 53%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --radius: 0.75rem;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Pipeline colors */
+    --pipeline-new: 217 91% 60%;
+    --pipeline-contact: 262 83% 58%;
+    --pipeline-qualified: 142 76% 36%;
+    --pipeline-demo: 25 95% 53%;
+    --pipeline-proposal: 38 92% 50%;
+    --pipeline-won: 142 76% 36%;
+    --pipeline-lost: 0 84% 60%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Priority colors */
+    --priority-p1: 0 84% 60%;
+    --priority-p2: 38 92% 50%;
+    --priority-p3: 217 91% 60%;
+    --priority-p4: 215 20% 55%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 47% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 25 95% 53%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
+    --card: 222 47% 9%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 47% 9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 25 95% 53%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 222 47% 14%;
     --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 222 47% 18%;
     --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 222 47% 18%;
+    --input: 222 47% 14%;
+    --ring: 25 95% 53%;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 47% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 47% 18%;
+    --sidebar-ring: 25 95% 53%;
   }
 }
 
@@ -99,7 +111,155 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    @apply antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Action card styles */
+  .action-card {
+    @apply bg-card rounded-xl border border-border p-4 transition-all duration-200;
+    @apply active:scale-[0.98] touch-manipulation;
+  }
+
+  .action-card-urgent {
+    @apply border-l-4 border-l-destructive;
+  }
+
+  .action-card-warning {
+    @apply border-l-4 border-l-warning;
+  }
+
+  .action-card-normal {
+    @apply border-l-4 border-l-info;
+  }
+
+  /* Touch-friendly buttons */
+  .btn-touch {
+    @apply min-h-[48px] min-w-[48px] flex items-center justify-center;
+    @apply rounded-xl font-medium transition-all duration-200;
+    @apply active:scale-95 touch-manipulation;
+  }
+
+  .btn-primary {
+    @apply btn-touch bg-primary text-primary-foreground;
+    @apply hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply btn-touch bg-secondary text-secondary-foreground;
+    @apply hover:bg-secondary/80;
+  }
+
+  .btn-ghost {
+    @apply btn-touch bg-transparent text-foreground;
+    @apply hover:bg-accent;
+  }
+
+  .btn-whatsapp {
+    @apply btn-touch bg-[hsl(142,70%,45%)] text-white;
+  }
+
+  .btn-call {
+    @apply btn-touch bg-info text-white;
+  }
+
+  /* Pipeline badges */
+  .badge-pipeline {
+    @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+  }
+
+  /* Priority indicators */
+  .priority-p1 {
+    @apply bg-destructive/20 text-destructive;
+  }
+
+  .priority-p2 {
+    @apply bg-warning/20 text-warning;
+  }
+
+  .priority-p3 {
+    @apply bg-info/20 text-info;
+  }
+
+  /* Bottom navigation */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border;
+    @apply flex items-center justify-around px-2 py-2;
+    @apply safe-area-pb;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center justify-center gap-1 p-2 rounded-xl;
+    @apply text-muted-foreground transition-colors min-w-[64px];
+  }
+
+  .nav-item.active {
+    @apply text-primary bg-primary/10;
+  }
+
+  /* Safe area padding for mobile */
+  .safe-area-pb {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-pt {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  /* Scrollable content area */
+  .content-scroll {
+    @apply overflow-y-auto overscroll-contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Glass effect cards */
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl;
+  }
+
+  /* Floating action button */
+  .fab {
+    @apply fixed bottom-24 right-4 w-14 h-14 rounded-full;
+    @apply bg-primary text-primary-foreground shadow-lg shadow-primary/25;
+    @apply flex items-center justify-center;
+    @apply active:scale-95 transition-transform touch-manipulation;
+  }
+
+  /* Status dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  /* Timeline styles */
+  .timeline-item {
+    @apply relative pl-6 pb-4 border-l-2 border-border last:border-l-0;
+  }
+
+  .timeline-dot {
+    @apply absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
