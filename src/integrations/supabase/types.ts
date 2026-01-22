@@ -14,16 +14,374 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assets: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          for_lead_type: Database["public"]["Enums"]["lead_type"][] | null
+          id: string
+          name: string
+          notion_page_id: string | null
+          tags: string[] | null
+          type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          for_lead_type?: Database["public"]["Enums"]["lead_type"][] | null
+          id?: string
+          name: string
+          notion_page_id?: string | null
+          tags?: string[] | null
+          type: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          for_lead_type?: Database["public"]["Enums"]["lead_type"][] | null
+          id?: string
+          name?: string
+          notion_page_id?: string | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      interactions: {
+        Row: {
+          asset_sent: string | null
+          content: string | null
+          created_at: string
+          direction: Database["public"]["Enums"]["interaction_direction"]
+          id: string
+          lead_id: string
+          notion_page_id: string | null
+          type: Database["public"]["Enums"]["interaction_type"]
+          user_id: string
+        }
+        Insert: {
+          asset_sent?: string | null
+          content?: string | null
+          created_at?: string
+          direction: Database["public"]["Enums"]["interaction_direction"]
+          id?: string
+          lead_id: string
+          notion_page_id?: string | null
+          type: Database["public"]["Enums"]["interaction_type"]
+          user_id: string
+        }
+        Update: {
+          asset_sent?: string | null
+          content?: string | null
+          created_at?: string
+          direction?: Database["public"]["Enums"]["interaction_direction"]
+          id?: string
+          lead_id?: string
+          notion_page_id?: string | null
+          type?: Database["public"]["Enums"]["interaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          city: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          last_touch_at: string | null
+          lead_type: Database["public"]["Enums"]["lead_type"]
+          name: string
+          next_action_at: string
+          next_action_note: string | null
+          next_action_type: Database["public"]["Enums"]["action_type"]
+          notion_page_id: string | null
+          nurture_step: number | null
+          nurture_track_id: string | null
+          observations: string | null
+          origin: Database["public"]["Enums"]["lead_origin"]
+          phone: string
+          priority: Database["public"]["Enums"]["lead_priority"]
+          score: number | null
+          stage: string
+          state: string | null
+          status_final: Database["public"]["Enums"]["lead_status_final"]
+          substatus: string | null
+          synced_at: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_touch_at?: string | null
+          lead_type?: Database["public"]["Enums"]["lead_type"]
+          name: string
+          next_action_at: string
+          next_action_note?: string | null
+          next_action_type: Database["public"]["Enums"]["action_type"]
+          notion_page_id?: string | null
+          nurture_step?: number | null
+          nurture_track_id?: string | null
+          observations?: string | null
+          origin: Database["public"]["Enums"]["lead_origin"]
+          phone: string
+          priority?: Database["public"]["Enums"]["lead_priority"]
+          score?: number | null
+          stage?: string
+          state?: string | null
+          status_final?: Database["public"]["Enums"]["lead_status_final"]
+          substatus?: string | null
+          synced_at?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_touch_at?: string | null
+          lead_type?: Database["public"]["Enums"]["lead_type"]
+          name?: string
+          next_action_at?: string
+          next_action_note?: string | null
+          next_action_type?: Database["public"]["Enums"]["action_type"]
+          notion_page_id?: string | null
+          nurture_step?: number | null
+          nurture_track_id?: string | null
+          observations?: string | null
+          origin?: Database["public"]["Enums"]["lead_origin"]
+          phone?: string
+          priority?: Database["public"]["Enums"]["lead_priority"]
+          score?: number | null
+          stage?: string
+          state?: string | null
+          status_final?: Database["public"]["Enums"]["lead_status_final"]
+          substatus?: string | null
+          synced_at?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_nurture_track_id_fkey"
+            columns: ["nurture_track_id"]
+            isOneToOne: false
+            referencedRelation: "nurture_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nurture_tracks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          lead_type: Database["public"]["Enums"]["lead_type"]
+          name: string
+          notion_page_id: string | null
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          lead_type: Database["public"]["Enums"]["lead_type"]
+          name: string
+          notion_page_id?: string | null
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          lead_type?: Database["public"]["Enums"]["lead_type"]
+          name?: string
+          notion_page_id?: string | null
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          action_type: Database["public"]["Enums"]["action_type"]
+          created_at: string
+          due_at: string
+          id: string
+          lead_id: string
+          note: string | null
+          notion_page_id: string | null
+          priority: Database["public"]["Enums"]["lead_priority"]
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["action_type"]
+          created_at?: string
+          due_at: string
+          id?: string
+          lead_id: string
+          note?: string | null
+          notion_page_id?: string | null
+          priority?: Database["public"]["Enums"]["lead_priority"]
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["action_type"]
+          created_at?: string
+          due_at?: string
+          id?: string
+          lead_id?: string
+          note?: string | null
+          notion_page_id?: string | null
+          priority?: Database["public"]["Enums"]["lead_priority"]
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      action_type:
+        | "WHATSAPP"
+        | "LIGACAO"
+        | "EMAIL"
+        | "VISITA"
+        | "REUNIAO"
+        | "ENVIAR_MATERIAL"
+        | "ENVIAR_PROPOSTA"
+        | "FOLLOW_UP"
+        | "DEMONSTRACAO"
+      app_role: "admin" | "user"
+      interaction_direction: "IN" | "OUT"
+      interaction_type:
+        | "WHATSAPP_IN"
+        | "WHATSAPP_OUT"
+        | "LIGACAO_IN"
+        | "LIGACAO_OUT"
+        | "EMAIL_IN"
+        | "EMAIL_OUT"
+        | "VISITA"
+        | "REUNIAO"
+        | "MUDANCA_ETAPA"
+        | "NOTA"
+      lead_origin:
+        | "NUVEMSHOP"
+        | "INSTAGRAM"
+        | "GOOGLE"
+        | "WHATSAPP"
+        | "TELEFONE"
+        | "INDICACAO"
+        | "PRESENCIAL_EMPRESA"
+        | "VISITA_SALAO"
+      lead_priority: "P1" | "P2" | "P3" | "P4"
+      lead_status_final: "ATIVO" | "CONVERTIDO" | "PERDIDO" | "FORA_PERFIL"
+      lead_type: "PROFISSIONAL" | "DISTRIBUIDOR" | "NAO_QUALIFICADO"
+      task_status: "OPEN" | "DONE" | "CANCELED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +508,46 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      action_type: [
+        "WHATSAPP",
+        "LIGACAO",
+        "EMAIL",
+        "VISITA",
+        "REUNIAO",
+        "ENVIAR_MATERIAL",
+        "ENVIAR_PROPOSTA",
+        "FOLLOW_UP",
+        "DEMONSTRACAO",
+      ],
+      app_role: ["admin", "user"],
+      interaction_direction: ["IN", "OUT"],
+      interaction_type: [
+        "WHATSAPP_IN",
+        "WHATSAPP_OUT",
+        "LIGACAO_IN",
+        "LIGACAO_OUT",
+        "EMAIL_IN",
+        "EMAIL_OUT",
+        "VISITA",
+        "REUNIAO",
+        "MUDANCA_ETAPA",
+        "NOTA",
+      ],
+      lead_origin: [
+        "NUVEMSHOP",
+        "INSTAGRAM",
+        "GOOGLE",
+        "WHATSAPP",
+        "TELEFONE",
+        "INDICACAO",
+        "PRESENCIAL_EMPRESA",
+        "VISITA_SALAO",
+      ],
+      lead_priority: ["P1", "P2", "P3", "P4"],
+      lead_status_final: ["ATIVO", "CONVERTIDO", "PERDIDO", "FORA_PERFIL"],
+      lead_type: ["PROFISSIONAL", "DISTRIBUIDOR", "NAO_QUALIFICADO"],
+      task_status: ["OPEN", "DONE", "CANCELED"],
+    },
   },
 } as const
