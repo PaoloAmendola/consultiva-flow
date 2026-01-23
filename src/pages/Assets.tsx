@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { mockAssets } from '@/data/mockData';
+import { useAssets } from '@/hooks/useAssets';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Search, FileText, Video, Image, Link as LinkIcon, Headphones, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Assets = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const { data: assets, isLoading, error } = useAssets();
 
-  const filteredAssets = mockAssets.filter(asset => {
+  const filteredAssets = (assets || []).filter(asset => {
     if (typeFilter && asset.type !== typeFilter) return false;
     if (!searchQuery) return true;
     
@@ -45,10 +47,20 @@ const Assets = () => {
 
   const assetTypes = ['PDF', 'VIDEO', 'IMAGEM', 'LINK', 'AUDIO'];
 
+  if (error) {
+    return (
+      <DashboardLayout title="Assets" subtitle="Erro ao carregar">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-destructive">Erro ao carregar assets. Tente novamente.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout 
       title="Assets" 
-      subtitle={`${mockAssets.length} materiais disponíveis`}
+      subtitle={isLoading ? 'Carregando...' : `${assets?.length || 0} materiais disponíveis`}
     >
       {/* Search and filters */}
       <div className="flex flex-wrap items-center gap-4 mb-6">
@@ -85,63 +97,70 @@ const Assets = () => {
       </div>
 
       {/* Asset grid */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filteredAssets.map(asset => {
-          const Icon = getAssetIcon(asset.type);
-          return (
-            <div
-              key={asset.id}
-              className="action-card"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <Icon className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground mb-1">{asset.name}</h3>
-                  {asset.description && (
-                    <p className="text-sm text-muted-foreground mb-2">{asset.description}</p>
-                  )}
-                  <div className="flex flex-wrap gap-1">
-                    <Badge variant="secondary" className="text-xs">{asset.type}</Badge>
-                    {asset.tags?.map(tag => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 mt-4">
-                <Button 
-                  className="flex-1 gap-2"
-                  onClick={() => handleOpen(asset.url)}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Abrir
-                </Button>
-                <Button 
-                  variant="secondary"
-                  onClick={() => handleCopyLink(asset.url)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredAssets.length === 0 && (
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <Skeleton key={i} className="h-48 rounded-xl" />
+          ))}
+        </div>
+      ) : filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Search className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-1">
             Nenhum material encontrado
           </h3>
           <p className="text-sm text-muted-foreground">
-            Tente buscar por outro termo
+            {searchQuery ? 'Tente buscar por outro termo' : 'Nenhum asset cadastrado'}
           </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {filteredAssets.map(asset => {
+            const Icon = getAssetIcon(asset.type);
+            return (
+              <div
+                key={asset.id}
+                className="action-card"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground mb-1">{asset.name}</h3>
+                    {asset.description && (
+                      <p className="text-sm text-muted-foreground mb-2">{asset.description}</p>
+                    )}
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="text-xs">{asset.type}</Badge>
+                      <Badge variant="outline" className="text-xs">{asset.code}</Badge>
+                      {asset.tags?.map(tag => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-4">
+                  <Button 
+                    className="flex-1 gap-2"
+                    onClick={() => handleOpen(asset.url)}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Abrir
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => handleCopyLink(asset.url)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </DashboardLayout>
