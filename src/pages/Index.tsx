@@ -1,54 +1,89 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LeadCard } from '@/components/leads/LeadCard';
-import { FilterBar } from '@/components/leads/FilterBar';
-import { mockLeads } from '@/data/mockData';
+import { FilterBar, LeadFilters } from '@/components/leads/FilterBar';
+import { useActionableLeads, useUpdateLead } from '@/hooks/useLeads';
+import { useCreateInteraction } from '@/hooks/useInteractions';
+import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
 const Index = () => {
-  const [filters, setFilters] = useState<Record<string, string[]>>({});
+  const [filters, setFilters] = useState<LeadFilters>({});
+  const { data: leads, isLoading, error } = useActionableLeads();
+  const updateLead = useUpdateLead();
+  const createInteraction = useCreateInteraction();
 
-  // Filter leads that need action NOW (overdue or due soon)
-  const actionableLeads = useMemo(() => {
-    const now = new Date();
+  const filteredLeads = useMemo(() => {
+    if (!leads) return [];
     
-    return mockLeads
-      .filter(lead => {
-        const actionDate = new Date(lead.nextActionAt);
-        const hoursUntilDue = (actionDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-        
-        // Show leads due within next 4 hours or overdue
-        return hoursUntilDue <= 4 && lead.statusFinal === 'ATIVO';
-      })
-      .filter(lead => {
-        // Apply filters
-        if (filters.pipeline?.length && !filters.pipeline.includes(lead.leadType)) return false;
-        if (filters.priority?.length && !filters.priority.includes(lead.priority)) return false;
-        if (filters.origin?.length && !filters.origin.includes(lead.origin)) return false;
-        return true;
-      })
-      .sort((a, b) => {
-        // Sort by priority first, then by due date
-        const priorityOrder = { P1: 0, P2: 1, P3: 2, P4: 3 };
-        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
-        }
-        return new Date(a.nextActionAt).getTime() - new Date(b.nextActionAt).getTime();
-      });
-  }, [filters]);
+    return leads.filter(lead => {
+      if (filters.leadType?.length && !filters.leadType.includes(lead.lead_type)) return false;
+      if (filters.priority?.length && !filters.priority.includes(lead.priority)) return false;
+      if (filters.origin?.length && !filters.origin.includes(lead.origin)) return false;
+      return true;
+    });
+  }, [leads, filters]);
 
-  const handleMarkDone = (leadId: string) => {
-    toast.success('Ação marcada como concluída!');
+  const handleMarkDone = async (leadId: string) => {
+    const lead = leads?.find(l => l.id === leadId);
+    if (!lead) return;
+
+    // Create interaction
+    await createInteraction.mutateAsync({
+      lead_id: leadId,
+      type: 'NOTA',
+      direction: 'OUT',
+      content: `Ação concluída: ${lead.next_action_type}`,
+    });
+
+    // Schedule next action for tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+
+    await updateLead.mutateAsync({
+      id: leadId,
+      data: {
+        next_action_at: tomorrow.toISOString(),
+        next_action_type: 'FOLLOW_UP',
+        next_action_note: 'Acompanhamento',
+      },
+    });
+
+    toast.success('Ação concluída! Próxima ação agendada para amanhã.');
   };
 
-  const handleReschedule = (leadId: string) => {
-    toast.info('Em breve: Reagendar ação');
+  const handleReschedule = async (leadId: string) => {
+    // Schedule for 2 hours from now
+    const twoHoursFromNow = new Date();
+    twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2);
+
+    await updateLead.mutateAsync({
+      id: leadId,
+      data: {
+        next_action_at: twoHoursFromNow.toISOString(),
+      },
+    });
+
+    toast.info('Reagendado para daqui 2 horas');
   };
 
-  const overdueCount = actionableLeads.filter(l => l.isOverdue).length;
-  const subtitle = overdueCount > 0 
-    ? `${overdueCount} ação${overdueCount > 1 ? 'ões' : ''} vencida${overdueCount > 1 ? 's' : ''}`
-    : `${actionableLeads.length} ações pendentes`;
+  const overdueCount = filteredLeads.filter(l => l.isOverdue).length;
+  const subtitle = isLoading 
+    ? 'Carregando...'
+    : overdueCount > 0 
+      ? `${overdueCount} ação${overdueCount > 1 ? 'ões' : ''} vencida${overdueCount > 1 ? 's' : ''}`
+      : `${filteredLeads.length} ações pendentes`;
+
+  if (error) {
+    return (
+      <DashboardLayout title="Agora" subtitle="Erro ao carregar">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="text-destructive">Erro ao carregar leads. Tente novamente.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout 
@@ -61,7 +96,13 @@ const Index = () => {
       />
 
       <div className="grid gap-4 mt-4 md:grid-cols-2 xl:grid-cols-3">
-        {actionableLeads.length === 0 ? (
+        {isLoading ? (
+          <>
+            {[1, 2, 3].map(i => (
+              <Skeleton key={i} className="h-64 rounded-xl" />
+            ))}
+          </>
+        ) : filteredLeads.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
             <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mb-4">
               <svg className="w-10 h-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,7 +117,7 @@ const Index = () => {
             </p>
           </div>
         ) : (
-          actionableLeads.map(lead => (
+          filteredLeads.map(lead => (
             <LeadCard
               key={lead.id}
               lead={lead}

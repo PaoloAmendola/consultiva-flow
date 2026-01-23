@@ -22,6 +22,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const mainItems = [
   { title: 'Agora', url: '/', icon: LayoutDashboard },
@@ -37,6 +39,12 @@ const resourceItems = [
 export function DashboardSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+  const { signOut, user } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success('Logout realizado com sucesso!');
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -106,12 +114,20 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-sidebar-border">
+        {!isCollapsed && user && (
+          <div className="mb-3 px-2">
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Configurações">
-              <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors w-full">
-                <Settings className="h-5 w-5 shrink-0" />
-                {!isCollapsed && <span>Configurações</span>}
+            <SidebarMenuButton asChild tooltip="Sair">
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
+              >
+                <LogOut className="h-5 w-5 shrink-0" />
+                {!isCollapsed && <span>Sair</span>}
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -1,50 +1,66 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { mockLeads, mockInteractions, mockTracks, mockAssets } from '@/data/mockData';
-import { ORIGIN_LABELS, PROFISSIONAL_STAGES, DISTRIBUIDOR_STAGES, ACTION_TYPES } from '@/types/crm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   ArrowLeft, 
   MessageCircle, 
   Phone, 
   Mail, 
-  MapPin, 
-  Building, 
-  Calendar,
+  Building2, 
+  MapPin,
   Clock,
-  Edit,
-  Send,
-  ChevronRight,
+  Calendar,
   FileText,
-  RefreshCw
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+import { useLead, useUpdateLead } from '@/hooks/useLeads';
+import { useInteractions, useCreateInteraction } from '@/hooks/useInteractions';
+import { useNurtureTracks } from '@/hooks/useNurtureTracks';
+import { 
+  PROFISSIONAL_STAGES, 
+  DISTRIBUIDOR_STAGES, 
+  ORIGIN_LABELS,
+  ACTION_TYPE_CONFIG,
+  PRIORITY_CONFIG,
+} from '@/types/database';
 
 const LeadProfile = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const lead = mockLeads.find(l => l.id === id);
-  const interactions = mockInteractions.filter(i => i.leadId === id);
-  const nurtureTrack = lead?.nurtureTrackId 
-    ? mockTracks.find(t => t.id === lead.nurtureTrackId) 
-    : null;
-  const currentNurtureStep = nurtureTrack?.steps[lead?.nurtureStep || 0];
-  const suggestedAsset = currentNurtureStep?.assetId 
-    ? mockAssets.find(a => a.id === currentNurtureStep.assetId)
-    : null;
+  const { data: lead, isLoading: leadLoading } = useLead(id || '');
+  const { data: interactions, isLoading: interactionsLoading } = useInteractions(id || '');
+  const { data: tracks } = useNurtureTracks();
+  const updateLead = useUpdateLead();
+  const createInteraction = useCreateInteraction();
+
+  if (leadLoading) {
+    return (
+      <DashboardLayout title="Carregando..." subtitle="">
+        <div className="space-y-4">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!lead) {
     return (
-      <DashboardLayout title="Lead não encontrado">
+      <DashboardLayout title="Lead não encontrado" subtitle="">
         <div className="flex flex-col items-center justify-center py-16">
-          <p className="text-muted-foreground mb-4">Lead não encontrado</p>
+          <p className="text-muted-foreground mb-4">Este lead não existe ou foi removido.</p>
           <Button onClick={() => navigate('/leads')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar para Leads
           </Button>
         </div>
@@ -52,295 +68,333 @@ const LeadProfile = () => {
     );
   }
 
-  const stages = lead.leadType === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
+  const stages = lead.lead_type === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
   const currentStage = stages.find(s => s.value === lead.stage);
-  const actionType = ACTION_TYPES.find(a => a.value === lead.nextActionType);
-
-  const handleSendNurture = () => {
-    toast.success('Mensagem de nutrição enviada!');
-  };
-
-  const handleNextStep = () => {
-    toast.success('Avançou para próximo passo da trilha');
-  };
-
-  const handleChangeTrack = () => {
-    toast.info('Em breve: Mudar trilha');
-  };
+  const nurtureTrack = tracks?.find(t => t.id === lead.nurture_track_id);
+  const currentNurtureStep = nurtureTrack?.steps[lead.nurture_step || 0];
 
   const getInteractionIcon = (type: string) => {
     if (type.includes('WHATSAPP')) return MessageCircle;
     if (type.includes('LIGACAO')) return Phone;
     if (type.includes('EMAIL')) return Mail;
-    if (type.includes('REUNIAO')) return Calendar;
+    if (type === 'REUNIAO') return Calendar;
     return FileText;
+  };
+
+  const handleWhatsApp = () => {
+    const phone = lead.phone.replace(/\D/g, '');
+    const message = lead.suggestedMessage 
+      ? encodeURIComponent(lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0]))
+      : '';
+    window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
+  };
+
+  const handleCall = () => {
+    window.open(`tel:+55${lead.phone.replace(/\D/g, '')}`, '_blank');
+  };
+
+  const handleCopyMessage = () => {
+    if (lead.suggestedMessage) {
+      const message = lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0]);
+      navigator.clipboard.writeText(message);
+      toast.success('Mensagem copiada!');
+    }
+  };
+
+  const handleSendNurture = async () => {
+    if (!currentNurtureStep) return;
+
+    const message = currentNurtureStep.message.replace('{nome}', lead.name.split(' ')[0]);
+    
+    await createInteraction.mutateAsync({
+      lead_id: lead.id,
+      type: 'WHATSAPP_OUT',
+      direction: 'OUT',
+      content: message,
+      asset_sent: currentNurtureStep.asset_id || null,
+    });
+
+    // Advance nurture step
+    const nextStep = (lead.nurture_step || 0) + 1;
+    const nextStepData = nurtureTrack?.steps[nextStep];
+    
+    if (nextStepData) {
+      const nextActionDate = new Date();
+      nextActionDate.setDate(nextActionDate.getDate() + (nextStepData.day - currentNurtureStep.day));
+      
+      await updateLead.mutateAsync({
+        id: lead.id,
+        data: {
+          nurture_step: nextStep,
+          next_action_at: nextActionDate.toISOString(),
+          next_action_type: nextStepData.action_type,
+        },
+      });
+    }
+
+    handleWhatsApp();
+    toast.success('Mensagem de nutrição enviada!');
   };
 
   return (
     <DashboardLayout 
-      title={lead.name}
-      subtitle={currentStage?.label}
+      title={lead.name} 
+      subtitle={`${ORIGIN_LABELS[lead.origin]} • ${lead.company || 'Sem empresa'}`}
     >
       {/* Back button */}
       <Button 
         variant="ghost" 
+        size="sm" 
+        className="mb-4"
         onClick={() => navigate(-1)}
-        className="mb-6 gap-2"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4 mr-2" />
         Voltar
       </Button>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left column - Main info */}
+        {/* Main info column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Header info */}
+          {/* Lead info card */}
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-6">
+            <CardHeader>
+              <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-foreground">{lead.name}</h2>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary">{currentStage?.label}</Badge>
-                    <Badge variant="outline" className={cn(
-                      lead.priority === 'P1' && 'border-destructive text-destructive',
-                      lead.priority === 'P2' && 'border-warning text-warning',
-                    )}>
+                  <CardTitle className="text-xl">{lead.name}</CardTitle>
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <Badge className={cn(currentStage?.color)}>
+                      {currentStage?.label || lead.stage}
+                    </Badge>
+                    <Badge variant="outline">
+                      {lead.lead_type === 'DISTRIBUIDOR' ? 'Canal' : 'Direto'}
+                    </Badge>
+                    <Badge variant="outline" className={PRIORITY_CONFIG[lead.priority]?.color}>
                       {lead.priority}
                     </Badge>
                     {lead.score && (
-                      <Badge variant="outline" className="gap-1">
-                        ⭐ {lead.score}
-                      </Badge>
+                      <Badge variant="secondary">Score: {lead.score}</Badge>
                     )}
                   </div>
                 </div>
-                <Button variant="outline" size="icon">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Telefone</p>
-                    <p className="font-medium">{lead.phone}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="icon" className="bg-[hsl(142,70%,45%)] hover:bg-[hsl(142,70%,40%)]">
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary">
-                      <Phone className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <div className="flex gap-2">
+                  <Button size="icon" className="btn-whatsapp" onClick={handleWhatsApp}>
+                    <MessageCircle className="h-5 w-5" />
+                  </Button>
+                  <Button size="icon" className="btn-call" onClick={handleCall}>
+                    <Phone className="h-5 w-5" />
+                  </Button>
                 </div>
-
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{lead.phone}</span>
+                </div>
                 {lead.email && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{lead.email}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{lead.email}</span>
                   </div>
                 )}
-
                 {lead.company && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                      <Building className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Empresa</p>
-                      <p className="font-medium">{lead.company}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span>{lead.company}</span>
                   </div>
                 )}
-
                 {(lead.city || lead.state) && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Localização</p>
-                      <p className="font-medium">{[lead.city, lead.state].filter(Boolean).join(', ')}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{[lead.city, lead.state].filter(Boolean).join(', ')}</span>
                   </div>
                 )}
               </div>
 
               {lead.tags && lead.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-6 pt-6 border-t border-border">
+                <div className="flex gap-2 flex-wrap">
                   {lead.tags.map(tag => (
-                    <Badge key={tag} variant="secondary">#{tag}</Badge>
+                    <Badge key={tag} variant="outline">{tag}</Badge>
                   ))}
+                </div>
+              )}
+
+              {lead.observations && (
+                <div className="p-3 bg-secondary/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">{lead.observations}</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Timeline */}
+          {/* Interaction history */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Histórico</CardTitle>
+              <CardTitle className="text-lg">Histórico</CardTitle>
             </CardHeader>
             <CardContent>
-              {interactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhuma interação registrada
-                </p>
-              ) : (
-                <div className="space-y-1">
-                  {interactions.map((interaction) => {
+              {interactionsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-16" />
+                  ))}
+                </div>
+              ) : interactions && interactions.length > 0 ? (
+                <div className="space-y-3">
+                  {interactions.map(interaction => {
                     const Icon = getInteractionIcon(interaction.type);
                     return (
-                      <div key={interaction.id} className="timeline-item">
-                        <div className="timeline-dot" />
-                        <div className="flex items-start gap-3">
-                          <div className={cn(
-                            'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                            interaction.direction === 'IN' ? 'bg-info/20' : 'bg-secondary'
-                          )}>
-                            <Icon className={cn(
-                              'h-4 w-4',
-                              interaction.direction === 'IN' ? 'text-info' : 'text-muted-foreground'
-                            )} />
+                      <div 
+                        key={interaction.id}
+                        className={cn(
+                          'flex gap-3 p-3 rounded-lg',
+                          interaction.direction === 'IN' ? 'bg-secondary/50' : 'bg-primary/5'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                          interaction.direction === 'IN' ? 'bg-secondary' : 'bg-primary/20'
+                        )}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {interaction.type.replace('_', ' ')}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(interaction.created_at), "dd/MM HH:mm", { locale: ptBR })}
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-medium text-muted-foreground">
-                                {interaction.type.replace('_', ' ')}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(interaction.createdAt), "dd/MM HH:mm", { locale: ptBR })}
-                              </span>
-                            </div>
-                            {interaction.content && (
-                              <p className="text-sm text-foreground">{interaction.content}</p>
-                            )}
-                            {interaction.assetSent && (
-                              <Badge variant="secondary" className="text-xs mt-1">
-                                📎 {mockAssets.find(a => a.id === interaction.assetSent)?.name}
-                              </Badge>
-                            )}
-                          </div>
+                          {interaction.content && (
+                            <p className="text-sm">{interaction.content}</p>
+                          )}
+                          {interaction.asset_sent && (
+                            <Badge variant="secondary" className="mt-1 text-xs">
+                              📎 {interaction.asset_sent}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhuma interação registrada
+                </p>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Right column - Actions */}
+        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Next Action */}
-          <Card className={cn(
-            'border-l-4',
-            lead.isOverdue ? 'border-l-destructive' : 'border-l-primary'
-          )}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                PRÓXIMA AÇÃO
+          {/* Next action card */}
+          <Card className={cn(lead.isOverdue && 'border-destructive')}>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Próxima Ação
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  'w-12 h-12 rounded-xl flex items-center justify-center',
-                  lead.isOverdue ? 'bg-destructive/20' : 'bg-primary/20'
-                )}>
-                  <Clock className={cn(
-                    'h-6 w-6',
-                    lead.isOverdue ? 'text-destructive' : 'text-primary'
-                  )} />
+            <CardContent className="space-y-4">
+              {lead.isOverdue && lead.overdueReason && (
+                <div className="p-2 bg-destructive/10 rounded-lg">
+                  <p className="text-sm text-destructive font-medium">{lead.overdueReason}</p>
                 </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">{actionType?.label || lead.nextActionType}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {format(new Date(lead.nextActionAt), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                  </p>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </div>
-              {lead.nextActionNote && (
-                <p className="text-sm text-foreground bg-secondary/50 rounded-lg p-3">
-                  {lead.nextActionNote}
+              )}
+              
+              <div>
+                <p className="text-xs text-muted-foreground uppercase mb-1">Tipo</p>
+                <p className="font-medium">
+                  {ACTION_TYPE_CONFIG[lead.next_action_type]?.label || lead.next_action_type}
                 </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground uppercase mb-1">Quando</p>
+                <p className="font-medium">
+                  {format(new Date(lead.next_action_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                </p>
+              </div>
+
+              {lead.next_action_note && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase mb-1">O que fazer</p>
+                  <p className="text-sm">{lead.next_action_note}</p>
+                </div>
+              )}
+
+              {lead.suggestedMessage && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase mb-1">O que falar</p>
+                  <div className="bg-secondary/50 rounded-lg p-3 relative">
+                    <p className="text-sm pr-8">
+                      {lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0])}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8"
+                      onClick={handleCopyMessage}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Nurture Section */}
+          {/* Nurture track card */}
           {nurtureTrack && (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                  <span>NUTRIÇÃO</span>
-                  <Badge variant="outline" className="text-xs">
-                    {nurtureTrack.name}
-                  </Badge>
-                </CardTitle>
+              <CardHeader>
+                <CardTitle className="text-lg">Trilha de Nutrição</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary transition-all"
-                      style={{ 
-                        width: `${((lead.nurtureStep || 0) / nurtureTrack.steps.length) * 100}%` 
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {(lead.nurtureStep || 0) + 1}/{nurtureTrack.steps.length}
-                  </span>
+                <div>
+                  <p className="font-medium">{nurtureTrack.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Etapa {(lead.nurture_step || 0) + 1} de {nurtureTrack.steps.length}
+                  </p>
+                </div>
+
+                {/* Progress */}
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{ width: `${((lead.nurture_step || 0) + 1) / nurtureTrack.steps.length * 100}%` }}
+                  />
                 </div>
 
                 {currentNurtureStep && (
                   <>
-                    <div className="bg-secondary/50 rounded-lg p-4">
-                      <p className="text-xs text-muted-foreground mb-2">
-                        D{currentNurtureStep.day} - Mensagem sugerida:
-                      </p>
-                      <p className="text-sm text-foreground">
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase mb-1">Mensagem D{currentNurtureStep.day}</p>
+                      <p className="text-sm bg-secondary/50 rounded-lg p-3">
                         {currentNurtureStep.message.replace('{nome}', lead.name.split(' ')[0])}
                       </p>
                     </div>
 
-                    {suggestedAsset && (
-                      <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
+                    {currentNurtureStep.asset_id && (
+                      <div className="flex items-center gap-2 p-3 bg-secondary/50 rounded-lg">
                         <FileText className="h-5 w-5 text-primary" />
-                        <span className="flex-1 text-sm">{suggestedAsset.name}</span>
-                        <Button variant="ghost" size="sm">
-                          Abrir
-                        </Button>
+                        <span className="text-sm flex-1">Asset: {currentNurtureStep.asset_id}</span>
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <Button className="flex-1 gap-2" onClick={handleSendNurture}>
-                        <Send className="h-4 w-4" />
-                        Enviar
-                      </Button>
-                      <Button variant="secondary" onClick={handleNextStep}>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" onClick={handleChangeTrack}>
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button 
+                      className="w-full gap-2" 
+                      onClick={handleSendNurture}
+                      disabled={createInteraction.isPending}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {createInteraction.isPending ? 'Enviando...' : 'Enviar e Avançar'}
+                    </Button>
                   </>
                 )}
               </CardContent>

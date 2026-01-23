@@ -8,21 +8,27 @@ import {
   Copy,
   ExternalLink
 } from 'lucide-react';
-import { Lead, ORIGIN_LABELS, PROFISSIONAL_STAGES, DISTRIBUIDOR_STAGES } from '@/types/crm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { EnrichedLead } from '@/hooks/useLeads';
+import { 
+  PROFISSIONAL_STAGES, 
+  DISTRIBUIDOR_STAGES, 
+  ORIGIN_LABELS,
+  ACTION_TYPE_CONFIG 
+} from '@/types/database';
 
 interface LeadCardProps {
-  lead: Lead;
+  lead: EnrichedLead;
   onMarkDone?: (leadId: string) => void;
   onReschedule?: (leadId: string) => void;
 }
 
 export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
-  const stages = lead.leadType === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
+  const stages = lead.lead_type === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
   const currentStage = stages.find(s => s.value === lead.stage);
   
   const priorityClass = lead.priority === 'P1' ? 'action-card-urgent' 
@@ -31,14 +37,17 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
   const handleCopyMessage = () => {
     if (lead.suggestedMessage) {
-      navigator.clipboard.writeText(lead.suggestedMessage);
+      const message = lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0]);
+      navigator.clipboard.writeText(message);
       toast.success('Mensagem copiada!');
     }
   };
 
   const handleWhatsApp = () => {
     const phone = lead.phone.replace(/\D/g, '');
-    const message = encodeURIComponent(lead.suggestedMessage || '');
+    const message = lead.suggestedMessage 
+      ? encodeURIComponent(lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0]))
+      : '';
     window.open(`https://wa.me/55${phone}?text=${message}`, '_blank');
   };
 
@@ -46,17 +55,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
     window.open(`tel:+55${lead.phone.replace(/\D/g, '')}`, '_blank');
   };
 
-  const formatTimeAgo = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    
-    if (diffHours < 1) return 'Agora';
-    if (diffHours < 24) return `${diffHours}h atrás`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d atrás`;
-  };
+  const actionLabel = ACTION_TYPE_CONFIG[lead.next_action_type]?.label || lead.next_action_type;
 
   return (
     <div className={cn('action-card', priorityClass, 'animate-fade-in')}>
@@ -75,10 +74,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
           <div className="flex items-center gap-2 flex-wrap">
             <Badge 
               variant="secondary" 
-              className={cn(
-                'text-xs',
-                currentStage?.color && `bg-${currentStage.color}/20 text-${currentStage.color}`
-              )}
+              className={cn('text-xs', currentStage?.color)}
             >
               {currentStage?.label || lead.stage}
             </Badge>
@@ -121,7 +117,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
           O que fazer
         </p>
         <p className="text-sm text-foreground font-medium">
-          {lead.nextActionNote || `Executar: ${lead.nextActionType}`}
+          {lead.next_action_note || `${actionLabel}`}
         </p>
       </div>
 
@@ -132,7 +128,9 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
             O que falar
           </p>
           <div className="bg-secondary/50 rounded-lg p-3 relative">
-            <p className="text-sm text-foreground pr-8">{lead.suggestedMessage}</p>
+            <p className="text-sm text-foreground pr-8">
+              {lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0])}
+            </p>
             <Button
               variant="ghost"
               size="icon"
@@ -146,14 +144,14 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
       )}
 
       {/* What to send (Asset) */}
-      {lead.suggestedAsset && (
+      {lead.suggestedAssetCode && (
         <div className="mb-4">
           <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
             O que enviar
           </p>
           <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-3">
             <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-            <span className="text-sm text-foreground flex-1">{lead.suggestedAsset.name}</span>
+            <span className="text-sm text-foreground flex-1">Asset: {lead.suggestedAssetCode}</span>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <ExternalLink className="h-4 w-4" />
             </Button>
