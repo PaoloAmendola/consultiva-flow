@@ -31,16 +31,22 @@ const PRIORITY_OPTIONS = [
 export function FilterBar({ onFilterChange, activeFilters }: FilterBarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggleFilter = (category: keyof LeadFilters, value: string) => {
-    const currentValues = activeFilters[category] || [];
-    const newValues = currentValues.includes(value as any)
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value as any];
-    
-    onFilterChange({
-      ...activeFilters,
-      [category]: newValues.length > 0 ? newValues : undefined,
-    });
+  const toggleLeadType = (value: LeadType) => {
+    const current = activeFilters.leadType || [];
+    const newValues = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+    onFilterChange({ ...activeFilters, leadType: newValues.length > 0 ? newValues : undefined });
+  };
+
+  const togglePriority = (value: LeadPriority) => {
+    const current = activeFilters.priority || [];
+    const newValues = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+    onFilterChange({ ...activeFilters, priority: newValues.length > 0 ? newValues : undefined });
+  };
+
+  const toggleOrigin = (value: LeadOrigin) => {
+    const current = activeFilters.origin || [];
+    const newValues = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+    onFilterChange({ ...activeFilters, origin: newValues.length > 0 ? newValues : undefined });
   };
 
   const clearFilters = () => onFilterChange({});
@@ -75,7 +81,7 @@ export function FilterBar({ onFilterChange, activeFilters }: FilterBarProps) {
                     key={opt.value}
                     variant={activeFilters.leadType?.includes(opt.value as LeadType) ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => toggleFilter('leadType', opt.value)}
+                    onClick={() => toggleLeadType(opt.value as LeadType)}
                   >
                     {opt.label}
                   </Button>
@@ -90,7 +96,7 @@ export function FilterBar({ onFilterChange, activeFilters }: FilterBarProps) {
                     key={opt.value}
                     variant={activeFilters.priority?.includes(opt.value as LeadPriority) ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => toggleFilter('priority', opt.value)}
+                    onClick={() => togglePriority(opt.value as LeadPriority)}
                   >
                     {opt.label}
                   </Button>
@@ -107,12 +113,12 @@ export function FilterBar({ onFilterChange, activeFilters }: FilterBarProps) {
       </Sheet>
 
       {activeFilters.leadType?.map(v => (
-        <Badge key={v} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleFilter('leadType', v)}>
+        <Badge key={v} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleLeadType(v)}>
           {v} <X className="h-3 w-3" />
         </Badge>
       ))}
       {activeFilters.priority?.map(v => (
-        <Badge key={v} variant="secondary" className="gap-1 cursor-pointer" onClick={() => toggleFilter('priority', v)}>
+        <Badge key={v} variant="secondary" className="gap-1 cursor-pointer" onClick={() => togglePriority(v)}>
           {v} <X className="h-3 w-3" />
         </Badge>
       ))}
