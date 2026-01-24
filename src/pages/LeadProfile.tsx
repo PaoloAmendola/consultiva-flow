@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,8 @@ import {
   FileText,
   Copy,
   ExternalLink,
+  Plus,
+  Edit,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,6 +27,7 @@ import { cn } from '@/lib/utils';
 
 import { useLead, useUpdateLead } from '@/hooks/useLeads';
 import { useInteractions, useCreateInteraction } from '@/hooks/useInteractions';
+import { useTasks } from '@/hooks/useTasks';
 import { useNurtureTracks } from '@/hooks/useNurtureTracks';
 import { 
   PROFISSIONAL_STAGES, 
@@ -32,13 +36,21 @@ import {
   ACTION_TYPE_CONFIG,
   PRIORITY_CONFIG,
 } from '@/types/database';
+import { EditLeadModal } from '@/components/leads/EditLeadModal';
+import { AddInteractionModal } from '@/components/leads/AddInteractionModal';
+import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
+import { TaskList } from '@/components/tasks/TaskList';
 
 const LeadProfile = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [interactionModalOpen, setInteractionModalOpen] = useState(false);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
   
   const { data: lead, isLoading: leadLoading } = useLead(id || '');
   const { data: interactions, isLoading: interactionsLoading } = useInteractions(id || '');
+  const { data: tasks } = useTasks({ leadId: id || '' });
   const { data: tracks } = useNurtureTracks();
   const updateLead = useUpdateLead();
   const createInteraction = useCreateInteraction();
@@ -177,11 +189,17 @@ const LeadProfile = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="icon" className="btn-whatsapp" onClick={handleWhatsApp}>
+                  <Button size="icon" className="bg-green-600 hover:bg-green-700" onClick={handleWhatsApp}>
                     <MessageCircle className="h-5 w-5" />
                   </Button>
-                  <Button size="icon" className="btn-call" onClick={handleCall}>
+                  <Button size="icon" className="bg-blue-600 hover:bg-blue-700" onClick={handleCall}>
                     <Phone className="h-5 w-5" />
+                  </Button>
+                  <Button size="icon" variant="outline" onClick={() => setInteractionModalOpen(true)}>
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                  <Button size="icon" variant="outline" onClick={() => setEditModalOpen(true)}>
+                    <Edit className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
@@ -402,6 +420,26 @@ const LeadProfile = () => {
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      <EditLeadModal 
+        lead={lead}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+      />
+
+      <AddInteractionModal 
+        leadId={lead.id}
+        open={interactionModalOpen}
+        onOpenChange={setInteractionModalOpen}
+      />
+
+      <CreateTaskModal 
+        leadId={lead.id}
+        leadName={lead.name}
+        open={taskModalOpen}
+        onOpenChange={setTaskModalOpen}
+      />
     </DashboardLayout>
   );
 };
