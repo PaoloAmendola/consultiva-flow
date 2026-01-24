@@ -2,9 +2,12 @@ import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LeadCard } from '@/components/leads/LeadCard';
 import { FilterBar, LeadFilters } from '@/components/leads/FilterBar';
+import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { useActionableLeads, useUpdateLead } from '@/hooks/useLeads';
 import { useCreateInteraction } from '@/hooks/useInteractions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -90,12 +93,15 @@ const Index = () => {
       title="Agora" 
       subtitle={subtitle}
     >
-      <FilterBar 
-        onFilterChange={setFilters}
-        activeFilters={filters}
-      />
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <FilterBar 
+          onFilterChange={setFilters}
+          activeFilters={filters}
+        />
+        <CreateLeadForm />
+      </div>
 
-      <div className="grid gap-4 mt-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {isLoading ? (
           <>
             {[1, 2, 3].map(i => (
@@ -112,9 +118,10 @@ const Index = () => {
             <h3 className="text-xl font-semibold text-foreground mb-2">
               Tudo em dia! 🎉
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               Nenhuma ação pendente no momento
             </p>
+            <CreateLeadForm />
           </div>
         ) : (
           filteredLeads.map(lead => (
