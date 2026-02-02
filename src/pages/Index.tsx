@@ -3,11 +3,14 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { LeadCard } from '@/components/leads/LeadCard';
 import { FilterBar, LeadFilters } from '@/components/leads/FilterBar';
 import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
+import { MetricsCards } from '@/components/dashboard/MetricsCards';
+import { TaskList } from '@/components/tasks/TaskList';
 import { useActionableLeads, useUpdateLead } from '@/hooks/useLeads';
 import { useCreateInteraction } from '@/hooks/useInteractions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, ListTodo } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -93,46 +96,71 @@ const Index = () => {
       title="Agora" 
       subtitle={subtitle}
     >
-      <div className="flex items-center justify-between gap-4 mb-4">
-        <FilterBar 
-          onFilterChange={setFilters}
-          activeFilters={filters}
-        />
-        <CreateLeadForm />
+      {/* Metrics Section */}
+      <div className="mb-6">
+        <MetricsCards />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {isLoading ? (
-          <>
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-64 rounded-xl" />
-            ))}
-          </>
-        ) : filteredLeads.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mb-4">
-              <svg className="w-10 h-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Tudo em dia! 🎉
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Nenhuma ação pendente no momento
-            </p>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main content - Actions */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <FilterBar 
+              onFilterChange={setFilters}
+              activeFilters={filters}
+            />
             <CreateLeadForm />
           </div>
-        ) : (
-          filteredLeads.map(lead => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onMarkDone={handleMarkDone}
-              onReschedule={handleReschedule}
-            />
-          ))
-        )}
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {isLoading ? (
+              <>
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-64 rounded-xl" />
+                ))}
+              </>
+            ) : filteredLeads.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mb-4">
+                  <svg className="w-10 h-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  Tudo em dia! 🎉
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Nenhuma ação pendente no momento
+                </p>
+                <CreateLeadForm />
+              </div>
+            ) : (
+              filteredLeads.map(lead => (
+                <LeadCard
+                  key={lead.id}
+                  lead={lead}
+                  onMarkDone={handleMarkDone}
+                  onReschedule={handleReschedule}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar - Tasks */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Tarefas Pendentes</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <TaskList maxItems={5} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   );

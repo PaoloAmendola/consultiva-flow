@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useUpdateLead } from '@/hooks/useLeads';
+import { useNurtureTracks } from '@/hooks/useNurtureTracks';
 import { EnrichedLead } from '@/hooks/useLeads';
 import { 
   LeadType, 
@@ -56,6 +57,7 @@ const editLeadSchema = z.object({
   stage: z.string(),
   priority: z.enum(['P1', 'P2', 'P3', 'P4'] as const),
   status_final: z.enum(['ATIVO', 'CONVERTIDO', 'PERDIDO', 'FORA_PERFIL'] as const),
+  nurture_track_id: z.string().optional(),
   next_action_type: z.enum([
     'WHATSAPP', 'LIGACAO', 'EMAIL', 'VISITA', 'REUNIAO',
     'ENVIAR_MATERIAL', 'ENVIAR_PROPOSTA', 'FOLLOW_UP', 'DEMONSTRACAO'
@@ -82,6 +84,7 @@ const STATUS_FINAL_OPTIONS = [
 
 export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) {
   const updateLead = useUpdateLead();
+  const { data: nurtureTracks } = useNurtureTracks();
 
   const form = useForm<EditLeadFormData>({
     resolver: zodResolver(editLeadSchema),
@@ -97,6 +100,7 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
       stage: 'NOVO_LEAD',
       priority: 'P3',
       status_final: 'ATIVO',
+      nurture_track_id: '',
       next_action_type: 'WHATSAPP',
       next_action_at: '',
       next_action_note: '',
@@ -119,6 +123,7 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
         stage: lead.stage,
         priority: lead.priority,
         status_final: lead.status_final,
+        nurture_track_id: lead.nurture_track_id || '',
         next_action_type: lead.next_action_type,
         next_action_at: new Date(lead.next_action_at).toISOString().slice(0, 16),
         next_action_note: lead.next_action_note || '',
@@ -129,6 +134,7 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
 
   const selectedLeadType = form.watch('lead_type');
   const stages = selectedLeadType === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
+  const filteredTracks = nurtureTracks?.filter(t => t.lead_type === selectedLeadType) || [];
 
   const onSubmit = async (data: EditLeadFormData) => {
     if (!lead) return;
@@ -148,6 +154,8 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
           stage: data.stage,
           priority: data.priority,
           status_final: data.status_final,
+          nurture_track_id: data.nurture_track_id || null,
+          nurture_step: data.nurture_track_id !== lead.nurture_track_id ? 0 : undefined,
           next_action_type: data.next_action_type,
           next_action_at: new Date(data.next_action_at).toISOString(),
           next_action_note: data.next_action_note || null,
@@ -372,6 +380,32 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
                     <SelectContent>
                       {STATUS_FINAL_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="nurture_track_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trilha de Nutrição</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma trilha" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma</SelectItem>
+                      {filteredTracks.map((track) => (
+                        <SelectItem key={track.id} value={track.id}>
+                          {track.name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

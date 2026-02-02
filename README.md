@@ -1,73 +1,155 @@
-# Welcome to your Lovable project
+# Sales CRM - Máquina de Vendas
 
-## Project info
+<div align="center">
+  <img src="public/icon-512.png" alt="Sales CRM Logo" width="120" height="120">
+  
+  **CRM Mobile-First para Vendas Consultivas B2B**
+  
+  [![Made with Lovable](https://img.shields.io/badge/Made%20with-Lovable-ff6b6b?style=flat-square)](https://lovable.dev)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square)](https://www.typescriptlang.org/)
+  [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square)](https://react.dev/)
+</div>
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 📋 Sobre o Projeto
 
-There are several ways of editing your application.
+Sales CRM é uma aplicação de gerenciamento de relacionamento com clientes focada em vendas consultivas B2B. Desenvolvido com foco em **produtividade** e **acompanhamento de pipeline**, o sistema guia vendedores através de cada etapa do processo de vendas.
 
-**Use Lovable**
+### Principais Funcionalidades
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **📱 Interface Mobile-First**: Otimizada para uso em campo
+- **🎯 Gestão de Pipeline**: Acompanhamento visual de leads por etapa
+- **⏰ Ações Programadas**: Sistema NBA (Next Best Action) para nunca perder follow-ups
+- **🔄 Trilhas de Nutrição**: Sequências automatizadas de mensagens
+- **📊 Dashboard Inteligente**: Métricas e visão consolidada de performance
+- **📝 Histórico Completo**: Timeline de todas as interações com cada lead
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Tecnologias
 
-**Use your preferred IDE**
+- **Frontend**: React 18, TypeScript, Vite
+- **Estilização**: Tailwind CSS, shadcn/ui
+- **Estado**: TanStack Query (React Query)
+- **Backend**: Lovable Cloud (Supabase)
+- **Autenticação**: Supabase Auth
+- **Roteamento**: React Router DOM
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Instalação
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Pré-requisitos
 
-Follow these steps:
+- Node.js 18+ 
+- npm ou bun
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Configuração
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. Clone o repositório:
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd sales-crm
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. Instale as dependências:
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+```
+
+4. Inicie o servidor de desenvolvimento:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 📁 Estrutura do Projeto
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+src/
+├── components/          # Componentes React
+│   ├── ui/             # Componentes base (shadcn/ui)
+│   ├── leads/          # Componentes relacionados a leads
+│   ├── tasks/          # Componentes de tarefas
+│   ├── layout/         # Componentes de layout
+│   └── dashboard/      # Componentes do dashboard
+├── hooks/              # Custom hooks
+├── pages/              # Páginas da aplicação
+├── lib/                # Utilitários e helpers
+├── types/              # Definições de tipos TypeScript
+├── contexts/           # React Contexts
+└── integrations/       # Integrações com serviços externos
+```
 
-**Use GitHub Codespaces**
+## 🔐 Modelo de Dados
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Principais Entidades
 
-## What technologies are used for this project?
+| Entidade | Descrição |
+|----------|-----------|
+| **Leads** | Contatos comerciais com dados de qualificação |
+| **Interactions** | Histórico de comunicações (WhatsApp, ligações, emails) |
+| **Tasks** | Tarefas e ações programadas |
+| **Nurture Tracks** | Trilhas de nutrição automatizadas |
+| **Assets** | Materiais de venda (PDFs, vídeos, catálogos) |
 
-This project is built with:
+### Tipos de Lead
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Profissional**: Clientes diretos (salões, profissionais)
+- **Distribuidor**: Parceiros de canal (revendedores)
 
-## How can I deploy this project?
+### Status do Pipeline
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Pipeline dinâmico baseado no tipo de lead, com etapas como:
+- Novo Lead → Contato Inicial → Qualificado → Demonstração → Proposta → Fechado
 
-## Can I connect a custom domain to my Lovable project?
+## 🔧 Scripts Disponíveis
 
-Yes, you can!
+```bash
+# Desenvolvimento
+npm run dev           # Inicia servidor de desenvolvimento
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Build
+npm run build         # Gera build de produção
+npm run preview       # Preview do build
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+# Qualidade
+npm run lint          # Executa ESLint
+npm run type-check    # Verificação de tipos
+```
+
+## 🚢 Deploy
+
+### Vercel (Recomendado)
+
+1. Conecte seu repositório à Vercel
+2. Configure as variáveis de ambiente
+3. Deploy automático a cada push
+
+### Variáveis de Ambiente
+
+```env
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-anon
+```
+
+## 📱 Screenshots
+
+| Dashboard | Lead Profile | Leads List |
+|-----------|--------------|------------|
+| Métricas e ações pendentes | Visão 360° do lead | Lista filtrada de leads |
+
+## 🤝 Contribuindo
+
+Consulte nosso [Guia de Contribuição](CONTRIBUTING.md) para detalhes sobre como contribuir com o projeto.
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+<div align="center">
+  <p>Desenvolvido com ❤️ usando <a href="https://lovable.dev">Lovable</a></p>
+</div>

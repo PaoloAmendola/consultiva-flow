@@ -6,15 +6,25 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { useOpenTasks, useCompleteTask, useCancelTask } from '@/hooks/useTasks';
-import { ACTION_TYPE_CONFIG, PRIORITY_CONFIG } from '@/types/database';
+import { ACTION_TYPE_CONFIG, PRIORITY_CONFIG, DbTask } from '@/types/database';
 import { cn } from '@/lib/utils';
 
-export function TaskList() {
-  const { data: tasks, isLoading } = useOpenTasks();
+interface TaskListProps {
+  tasks?: DbTask[];
+  showLeadName?: boolean;
+  maxItems?: number;
+}
+
+export function TaskList({ tasks: externalTasks, showLeadName = true, maxItems = 10 }: TaskListProps) {
+  const { data: internalTasks, isLoading } = useOpenTasks();
   const completeTask = useCompleteTask();
   const cancelTask = useCancelTask();
 
-  if (isLoading) {
+  // Use external tasks if provided, otherwise use internal query
+  const tasks = externalTasks ?? internalTasks;
+  const loading = externalTasks === undefined ? isLoading : false;
+
+  if (loading) {
     return (
       <div className="space-y-2">
         {[1, 2, 3].map(i => (
@@ -36,7 +46,7 @@ export function TaskList() {
 
   return (
     <div className="space-y-2">
-      {tasks.slice(0, 10).map(task => {
+      {tasks.slice(0, maxItems).map(task => {
         const isOverdue = new Date(task.due_at) < now;
         const actionLabel = ACTION_TYPE_CONFIG[task.action_type]?.label || task.action_type;
         
