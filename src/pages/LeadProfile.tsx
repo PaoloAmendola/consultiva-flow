@@ -366,6 +366,29 @@ const LeadProfile = () => {
             </CardContent>
           </Card>
 
+          {/* Tasks section */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Tarefas</CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setTaskModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nova
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <TaskList 
+                tasks={tasks || []} 
+                showLeadName={false}
+              />
+            </CardContent>
+          </Card>
+
           {/* Nurture track card */}
           {nurtureTrack && (
             <Card>

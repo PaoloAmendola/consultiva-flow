@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,7 +25,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useCreateInteraction } from '@/hooks/useInteractions';
+import { useAssets } from '@/hooks/useAssets';
 import { InteractionType, InteractionDirection } from '@/types/database';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const interactionSchema = z.object({
   type: z.enum([
@@ -60,6 +61,7 @@ const INTERACTION_OPTIONS = [
 
 export function AddInteractionModal({ leadId, open, onOpenChange }: AddInteractionModalProps) {
   const createInteraction = useCreateInteraction();
+  const { data: assets, isLoading: assetsLoading } = useAssets();
 
   const form = useForm<InteractionFormData>({
     resolver: zodResolver(interactionSchema),
@@ -154,23 +156,23 @@ export function AddInteractionModal({ leadId, open, onOpenChange }: AddInteracti
                 <FormItem>
                   <FormLabel>Material Enviado (opcional)</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um material" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Nenhum</SelectItem>
-                        <SelectItem value="A1">A1 - Catálogo Completo</SelectItem>
-                        <SelectItem value="A2">A2 - Tabela de Preços</SelectItem>
-                        <SelectItem value="A3">A3 - Guia Colorimetria</SelectItem>
-                        <SelectItem value="A4">A4 - Vídeo Demo</SelectItem>
-                        <SelectItem value="A5">A5 - Cases Sucesso</SelectItem>
-                        <SelectItem value="A6">A6 - Lançamentos</SelectItem>
-                        <SelectItem value="B1">B1 - Proposta Distribuidor</SelectItem>
-                        <SelectItem value="B2">B2 - Manual Distribuidor</SelectItem>
-                        <SelectItem value="B3">B3 - Análise Mercado</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {assetsLoading ? (
+                      <Skeleton className="h-10 w-full" />
+                    ) : (
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um material" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhum</SelectItem>
+                          {assets?.map((asset) => (
+                            <SelectItem key={asset.id} value={asset.code}>
+                              {asset.code} - {asset.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
