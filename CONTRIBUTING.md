@@ -7,6 +7,7 @@ Obrigado por considerar contribuir para o Sales CRM! Este documento fornece dire
 - [Código de Conduta](#código-de-conduta)
 - [Como Contribuir](#como-contribuir)
 - [Padrões de Código](#padrões-de-código)
+- [Trabalhando com IA](#trabalhando-com-ia)
 - [Processo de Pull Request](#processo-de-pull-request)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 
@@ -120,6 +121,63 @@ style: formata código com prettier
 refactor: extrai lógica de validação para hook
 ```
 
+## Trabalhando com IA
+
+### Assistente de Vendas (Sales Coach)
+
+O assistente de IA usa a Lovable AI Gateway. Ao modificar:
+
+#### Edge Function (`supabase/functions/sales-coach/`)
+
+```typescript
+// Estrutura do contexto enviado para a IA
+interface LeadContext {
+  name: string;
+  lead_type: string;
+  stage: string;
+  origin: string;
+  priority: string;
+  days_since_contact: number;
+  next_action_type: string;
+  observations?: string;
+  available_assets: { code: string; name: string; type: string }[];
+}
+```
+
+**Dicas para modificar o prompt:**
+- O system prompt está na edge function, não no frontend
+- Adicione exemplos específicos para novos tipos de lead
+- Mantenha a estrutura JSON de resposta consistente
+
+#### Hook (`src/hooks/useSalesCoach.ts`)
+
+- Use `useMutation` para chamadas à IA
+- Trate erros de rate limit (429) e créditos (402)
+- O hook já filtra assets disponíveis por tipo de lead
+
+#### Componentes
+
+| Componente | Uso | Localização |
+|------------|-----|-------------|
+| `SalesCoachCard` | Análise completa | Perfil do Lead |
+| `QuickCoachTip` | Sugestão compacta | Cards de Lead |
+
+### Adicionando Novas Funcionalidades de IA
+
+1. Crie uma nova edge function em `supabase/functions/`
+2. Configure em `supabase/config.toml`
+3. Crie um hook dedicado em `src/hooks/`
+4. Trate erros 429 (rate limit) e 402 (créditos)
+
+```typescript
+// Exemplo de tratamento de erros
+if (response.status === 429) {
+  return new Response(JSON.stringify({ 
+    error: "Limite de requisições excedido. Tente novamente em alguns segundos." 
+  }), { status: 429, headers: corsHeaders });
+}
+```
+
 ## Processo de Pull Request
 
 1. **Título**: Use o formato conventional commits
@@ -131,6 +189,7 @@ refactor: extrai lógica de validação para hook
    - [ ] Código segue os padrões
    - [ ] Documentação atualizada (se necessário)
    - [ ] Testado em mobile e desktop
+   - [ ] Funcionalidades de IA testadas (se aplicável)
 
 ## Estrutura do Projeto
 
@@ -139,14 +198,28 @@ src/
 ├── components/       # Componentes React
 │   ├── ui/          # Componentes base (shadcn)
 │   ├── leads/       # Componentes de leads
+│   │   ├── SalesCoachCard.tsx    # Assistente IA completo
+│   │   ├── QuickCoachTip.tsx     # Sugestão IA compacta
+│   │   ├── LeadCard.tsx          # Card de lead
+│   │   └── ...
 │   ├── tasks/       # Componentes de tarefas
+│   ├── dashboard/   # Dashboard e métricas
 │   └── layout/      # Layout components
 ├── hooks/           # Custom hooks
+│   ├── useLeads.ts          # CRUD de leads
+│   ├── useSalesCoach.ts     # Assistente IA
+│   └── ...
 ├── pages/           # Páginas da aplicação
 ├── lib/             # Utilitários e helpers
+│   └── nba-engine.ts   # Motor de regras
 ├── types/           # Definições de tipos
 ├── contexts/        # React contexts
 └── integrations/    # Integrações externas
+
+supabase/
+├── functions/       # Edge Functions
+│   └── sales-coach/ # Assistente de vendas IA
+└── config.toml      # Configuração
 ```
 
 ## Dúvidas?

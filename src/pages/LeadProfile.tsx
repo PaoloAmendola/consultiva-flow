@@ -40,6 +40,7 @@ import { EditLeadModal } from '@/components/leads/EditLeadModal';
 import { AddInteractionModal } from '@/components/leads/AddInteractionModal';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { TaskList } from '@/components/tasks/TaskList';
+import { SalesCoachCard } from '@/components/leads/SalesCoachCard';
 
 const LeadProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -309,6 +310,9 @@ const LeadProfile = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Sales Coach */}
+          <SalesCoachCard lead={lead} />
+
           {/* Next action card */}
           <Card className={cn(lead.isOverdue && 'border-destructive')}>
             <CardHeader>
