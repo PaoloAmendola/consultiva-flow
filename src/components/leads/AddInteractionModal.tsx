@@ -88,7 +88,7 @@ export function AddInteractionModal({ leadId, open, onOpenChange }: AddInteracti
         type: data.type,
         direction: data.direction,
         content: data.content || null,
-        asset_sent: data.asset_sent || null,
+        asset_sent: data.asset_sent === 'none' ? null : (data.asset_sent || null),
       });
       onOpenChange(false);
       form.reset();
@@ -164,7 +164,7 @@ export function AddInteractionModal({ leadId, open, onOpenChange }: AddInteracti
                           <SelectValue placeholder="Selecione um material" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Nenhum</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
                           {assets?.map((asset) => (
                             <SelectItem key={asset.id} value={asset.code}>
                               {asset.code} - {asset.name}
