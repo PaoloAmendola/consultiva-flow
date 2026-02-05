@@ -1,1 +1,4 @@
 project_id = "livftofoadjisjlrttig"
+
+[functions.sales-coach]
+verify_jwt = false

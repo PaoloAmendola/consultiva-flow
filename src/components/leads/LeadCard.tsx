@@ -20,6 +20,7 @@ import {
   ORIGIN_LABELS,
   ACTION_TYPE_CONFIG 
 } from '@/types/database';
+import { QuickCoachTip } from './QuickCoachTip';
 
 interface LeadCardProps {
   lead: EnrichedLead;
@@ -158,6 +159,9 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
           </div>
         </div>
       )}
+
+      {/* AI Quick Coach Tip */}
+      <QuickCoachTip lead={lead} />
 
       {/* Action buttons */}
       <div className="flex items-center gap-2">
