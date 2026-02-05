@@ -154,7 +154,7 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
           stage: data.stage,
           priority: data.priority,
           status_final: data.status_final,
-          nurture_track_id: data.nurture_track_id || null,
+          nurture_track_id: data.nurture_track_id === 'none' ? null : (data.nurture_track_id || null),
           nurture_step: data.nurture_track_id !== lead.nurture_track_id ? 0 : undefined,
           next_action_type: data.next_action_type,
           next_action_at: new Date(data.next_action_at).toISOString(),
@@ -401,7 +401,7 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma</SelectItem>
+                      <SelectItem value="none">Nenhuma</SelectItem>
                       {filteredTracks.map((track) => (
                         <SelectItem key={track.id} value={track.id}>
                           {track.name}
