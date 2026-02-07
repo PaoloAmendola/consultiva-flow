@@ -1,8 +1,8 @@
-import { useActionableLeads } from '@/hooks/useLeads';
+import { useActiveLeads, useActionableLeads } from '@/hooks/useLeads';
 import { useOpenTasks } from '@/hooks/useTasks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Clock, CheckSquare, AlertTriangle } from 'lucide-react';
+import { Users, Clock, CheckSquare, AlertTriangle, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MetricCardProps {
@@ -10,10 +10,11 @@ interface MetricCardProps {
   value: number | string;
   icon: React.ReactNode;
   variant?: 'default' | 'warning' | 'success' | 'danger';
+  subtitle?: string;
   isLoading?: boolean;
 }
 
-function MetricCard({ title, value, icon, variant = 'default', isLoading }: MetricCardProps) {
+function MetricCard({ title, value, icon, variant = 'default', subtitle, isLoading }: MetricCardProps) {
   const variantStyles = {
     default: 'bg-info/10 text-info',
     warning: 'bg-warning/10 text-warning',
@@ -41,6 +42,9 @@ function MetricCard({ title, value, icon, variant = 'default', isLoading }: Metr
         <div>
           <p className="text-2xl font-bold text-foreground">{value}</p>
           <p className="text-xs text-muted-foreground uppercase tracking-wide">{title}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -48,13 +52,14 @@ function MetricCard({ title, value, icon, variant = 'default', isLoading }: Metr
 }
 
 export function MetricsCards() {
-  const { data: leads, isLoading: leadsLoading } = useActionableLeads();
+  const { data: actionableLeads, isLoading: actionableLoading } = useActionableLeads();
+  const { data: allActiveLeads, isLoading: activeLoading } = useActiveLeads();
   const { data: tasks, isLoading: tasksLoading } = useOpenTasks();
 
-  const activeLeads = leads?.filter(l => l.status_final === 'ATIVO').length ?? 0;
-  const overdueActions = leads?.filter(l => l.isOverdue).length ?? 0;
+  const totalActive = allActiveLeads?.length ?? 0;
+  const overdueActions = actionableLeads?.filter(l => l.isOverdue).length ?? 0;
   const pendingTasks = tasks?.length ?? 0;
-  const todayActions = leads?.filter(l => {
+  const todayActions = actionableLeads?.filter(l => {
     const actionDate = new Date(l.next_action_at);
     const today = new Date();
     return actionDate.toDateString() === today.toDateString();
@@ -64,24 +69,24 @@ export function MetricsCards() {
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
         title="Leads Ativos"
-        value={activeLeads}
+        value={totalActive}
         icon={<Users className="h-5 w-5" />}
         variant="default"
-        isLoading={leadsLoading}
+        isLoading={activeLoading}
       />
       <MetricCard
         title="Ações Hoje"
         value={todayActions}
         icon={<Clock className="h-5 w-5" />}
         variant="success"
-        isLoading={leadsLoading}
+        isLoading={actionableLoading}
       />
       <MetricCard
         title="Atrasadas"
         value={overdueActions}
         icon={<AlertTriangle className="h-5 w-5" />}
         variant={overdueActions > 0 ? 'danger' : 'default'}
-        isLoading={leadsLoading}
+        isLoading={actionableLoading}
       />
       <MetricCard
         title="Tarefas"

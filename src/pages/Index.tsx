@@ -4,6 +4,7 @@ import { LeadCard } from '@/components/leads/LeadCard';
 import { FilterBar, LeadFilters } from '@/components/leads/FilterBar';
 import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { MetricsCards } from '@/components/dashboard/MetricsCards';
+import { PipelineSummary } from '@/components/dashboard/PipelineSummary';
 import { TaskList } from '@/components/tasks/TaskList';
 import { useActionableLeads, useUpdateLead } from '@/hooks/useLeads';
 import { useCreateInteraction } from '@/hooks/useInteractions';
@@ -34,7 +35,6 @@ const Index = () => {
     const lead = leads?.find(l => l.id === leadId);
     if (!lead) return;
 
-    // Create interaction
     await createInteraction.mutateAsync({
       lead_id: leadId,
       type: 'NOTA',
@@ -42,7 +42,6 @@ const Index = () => {
       content: `Ação concluída: ${lead.next_action_type}`,
     });
 
-    // Schedule next action for tomorrow
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(9, 0, 0, 0);
@@ -60,7 +59,6 @@ const Index = () => {
   };
 
   const handleReschedule = async (leadId: string) => {
-    // Schedule for 2 hours from now
     const twoHoursFromNow = new Date();
     twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2);
 
@@ -147,7 +145,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Sidebar - Tasks */}
+        {/* Sidebar - Tasks + Pipeline */}
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
@@ -160,6 +158,8 @@ const Index = () => {
               <TaskList maxItems={5} />
             </CardContent>
           </Card>
+
+          <PipelineSummary />
         </div>
       </div>
     </DashboardLayout>

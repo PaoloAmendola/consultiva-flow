@@ -4,32 +4,73 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, ChevronRight, Clock } from 'lucide-react';
+import { Search, ChevronRight, Clock, Filter, X } from 'lucide-react';
 import { useActiveLeads } from '@/hooks/useLeads';
 import { 
   PROFISSIONAL_STAGES, 
   DISTRIBUIDOR_STAGES, 
   ORIGIN_LABELS,
+  LeadType,
+  LeadPriority,
 } from '@/types/database';
 import { cn } from '@/lib/utils';
 
+const LEAD_TYPE_OPTIONS: { value: LeadType; label: string }[] = [
+  { value: 'PROFISSIONAL', label: 'Profissional' },
+  { value: 'DISTRIBUIDOR', label: 'Distribuidor' },
+];
+
+const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
+  { value: 'P1', label: 'P1' },
+  { value: 'P2', label: 'P2' },
+  { value: 'P3', label: 'P3' },
+  { value: 'P4', label: 'P4' },
+];
+
+interface LeadFilters {
+  leadType?: LeadType;
+  priority?: LeadPriority;
+  stage?: string;
+}
+
 const Leads = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<LeadFilters>({});
+  const [showFilters, setShowFilters] = useState(false);
   const { data: leads, isLoading, error } = useActiveLeads();
 
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
-    if (!searchQuery) return leads;
     
-    const query = searchQuery.toLowerCase();
-    return leads.filter(lead => 
-      lead.name.toLowerCase().includes(query) ||
-      lead.phone.includes(query) ||
-      lead.company?.toLowerCase().includes(query) ||
-      lead.tags?.some(tag => tag.toLowerCase().includes(query))
+    return leads.filter(lead => {
+      if (filters.leadType && lead.lead_type !== filters.leadType) return false;
+      if (filters.priority && lead.priority !== filters.priority) return false;
+      if (filters.stage && lead.stage !== filters.stage) return false;
+      
+      if (!searchQuery) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        lead.name.toLowerCase().includes(query) ||
+        lead.phone.includes(query) ||
+        lead.company?.toLowerCase().includes(query) ||
+        lead.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    });
+  }, [leads, searchQuery, filters]);
+
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+
+  const availableStages = useMemo(() => {
+    if (filters.leadType === 'DISTRIBUIDOR') return [...DISTRIBUIDOR_STAGES];
+    if (filters.leadType === 'PROFISSIONAL') return [...PROFISSIONAL_STAGES];
+    return [...PROFISSIONAL_STAGES, ...DISTRIBUIDOR_STAGES].filter(
+      (stage, i, arr) => arr.findIndex(s => s.value === stage.value) === i
     );
-  }, [leads, searchQuery]);
+  }, [filters.leadType]);
+
+  const clearFilters = () => setFilters({});
 
   if (error) {
     return (
@@ -44,20 +85,106 @@ const Leads = () => {
   return (
     <DashboardLayout 
       title="Leads" 
-      subtitle={isLoading ? 'Carregando...' : `${leads?.length || 0} leads ativos`}
+      subtitle={isLoading ? 'Carregando...' : `${filteredLeads.length} de ${leads?.length || 0} leads`}
     >
-      {/* Header with search and new lead button */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, telefone, empresa..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="pl-10 bg-secondary"
-          />
+      {/* Header with search, filters and new lead */}
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, telefone, empresa..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-10 bg-secondary"
+            />
+          </div>
+          <Button
+            variant={showFilters ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+          <CreateLeadForm />
         </div>
-        <CreateLeadForm />
+
+        {/* Advanced filters */}
+        {showFilters && (
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-secondary/50 rounded-xl animate-fade-in">
+            {/* Lead type */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground mr-1">Tipo:</span>
+              {LEAD_TYPE_OPTIONS.map(opt => (
+                <Button
+                  key={opt.value}
+                  variant={filters.leadType === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setFilters(f => ({
+                    ...f,
+                    leadType: f.leadType === opt.value ? undefined : opt.value,
+                    stage: f.leadType === opt.value ? f.stage : undefined,
+                  }))}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Priority */}
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground mr-1">Prioridade:</span>
+              {PRIORITY_OPTIONS.map(opt => (
+                <Button
+                  key={opt.value}
+                  variant={filters.priority === opt.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setFilters(f => ({
+                    ...f,
+                    priority: f.priority === opt.value ? undefined : opt.value,
+                  }))}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+
+            {/* Stage */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-xs text-muted-foreground mr-1">Etapa:</span>
+              {availableStages.slice(0, 6).map(stage => (
+                <Button
+                  key={stage.value}
+                  variant={filters.stage === stage.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setFilters(f => ({
+                    ...f,
+                    stage: f.stage === stage.value ? undefined : stage.value,
+                  }))}
+                >
+                  {stage.label}
+                </Button>
+              ))}
+            </div>
+
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={clearFilters}>
+                <X className="h-3 w-3" />
+                Limpar
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Lead list */}
@@ -72,10 +199,10 @@ const Leads = () => {
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Search className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              {searchQuery ? 'Nenhum lead encontrado' : 'Nenhum lead cadastrado'}
+              {searchQuery || activeFilterCount > 0 ? 'Nenhum lead encontrado' : 'Nenhum lead cadastrado'}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {searchQuery ? 'Tente buscar por outro termo' : 'Clique em "Novo Lead" para começar'}
+              {searchQuery || activeFilterCount > 0 ? 'Tente buscar por outro termo ou ajustar os filtros' : 'Clique em "Novo Lead" para começar'}
             </p>
           </div>
         ) : (
