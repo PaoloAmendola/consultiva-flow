@@ -1,128 +1,67 @@
+# Sales CRM - Estado Atual e Próximos Passos
 
-# Plano de Melhoria Global do Sales CRM
+## Arquitetura
 
-## 1. Atualizar Documentacao
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+- **Backend**: Lovable Cloud (Supabase) - Auth, Database, Edge Functions
+- **IA**: Lovable AI Gateway (google/gemini-3-flash-preview) via Edge Function `sales-coach`
+- **Estado**: TanStack Query para cache e sincronização
+- **Roteamento**: React Router DOM v6
 
-### 1.1 `.lovable/plan.md` - Substituir conteudo obsoleto
-O arquivo ainda contem o plano de correcao dos SelectItem (ja implementado). Substituir por um documento de estado atual do projeto: arquitetura, modulos implementados, status de cada feature, e proximos passos.
+## Módulos Implementados
 
-### 1.2 `README.md` - Atualizar com estado real
-- Adicionar secao sobre Lovable AI Gateway (modelo gemini-3-flash-preview)
-- Atualizar a secao de tecnologias para incluir Lovable AI
-- Corrigir estrutura de arquivos para refletir os componentes reais (QuickCoachTip, SalesCoachCard, DashboardLayout, etc.)
+| Módulo | Status | Arquivos principais |
+|--------|--------|---------------------|
+| Autenticação | ✅ Completo | `AuthContext.tsx`, `Auth.tsx`, `ProtectedRoute.tsx` |
+| Dashboard (Agora) | ✅ Completo | `Index.tsx`, `MetricsCards.tsx` |
+| Pipeline Leads | ✅ Completo | `Leads.tsx`, `LeadProfile.tsx` |
+| Próximos 7 dias | ✅ Completo | `Proximos.tsx` |
+| Trilhas de Nutrição | ✅ Completo | `Trilhas.tsx`, `useNurtureTracks.ts` |
+| Biblioteca de Assets | ✅ Completo | `Assets.tsx`, `useAssets.ts` |
+| Gestão de Tarefas | ✅ Completo | `TaskList.tsx`, `CreateTaskModal.tsx` |
+| Motor NBA | ✅ Completo | `nba-engine.ts` |
+| Assistente IA | ✅ Completo | `SalesCoachCard.tsx`, `QuickCoachTip.tsx`, `useSalesCoach.ts` |
+| Perfil 360° do Lead | ✅ Completo | `LeadProfile.tsx` (stepper, delete, histórico) |
 
-### 1.3 `CONTRIBUTING.md` - Sincronizar
-- Atualizar arvore de diretórios com arquivos atuais
-- Adicionar secao sobre o hook `useSalesCoach` e como funciona
+## Banco de Dados
 
----
+### Tabelas
+- `leads` - Leads com pipeline, prioridade, próxima ação
+- `interactions` - Histórico de comunicações
+- `tasks` - Tarefas vinculadas a leads
+- `nurture_tracks` - Trilhas de nutrição com steps JSON
+- `assets` - Materiais de venda (PDFs, vídeos, links)
+- `profiles` - Dados extras do usuário
+- `user_roles` - Controle de acesso (admin/user)
 
-## 2. Melhorias no Dashboard (Index.tsx)
+### Triggers
+- `update_lead_last_touch` - Atualiza `last_touch_at` ao registrar interação
 
-### 2.1 Metricas mais ricas
-O `MetricsCards` atualmente mostra apenas leads acionaveis (proximas 4 horas). Melhorar para incluir:
-- **Total de leads ativos** (query separada, nao apenas acionaveis)
-- **Taxa de conversao** (convertidos / total)
-- Indicadores com setas de tendencia (comparacao visual)
+### RLS
+- Todas as tabelas com RLS ativo, isolamento por `user_id`
 
-### 2.2 Secao de leads por etapa do pipeline
-Adicionar um resumo visual compacto mostrando quantos leads existem em cada etapa do pipeline, como uma barra horizontal segmentada.
+## Pipelines
 
----
+### Profissional (DIRETO)
+Novo Lead → Contato Iniciado → Qualificado → Diagnóstico → Demonstração/Prova → Proposta/Condição → Fechado → Ativação → Recorrência
 
-## 3. Melhorias na Pagina de Leads (Leads.tsx)
+### Distribuidor (CANAL)
+Prospect → Pré-Qualificação → Reunião Estratégica → Proposta Comercial → Negociação → Aprovado → Cadastro/Contrato → Onboarding → Ativação → Expansão
 
-### 3.1 Filtros avancados
-A pagina de Leads atualmente so tem busca por texto. Adicionar:
-- Filtro por **tipo de lead** (Profissional/Distribuidor)
-- Filtro por **prioridade** (P1-P4)
-- Filtro por **etapa do pipeline**
-- Filtro por **status** (Ativo/Convertido/Perdido)
+## Regras NBA (Next Best Action)
 
-### 3.2 Contador por filtro
-Mostrar quantidade de leads por cada filtro ativo.
+- Ação vencida → P1
+- Novo lead sem contato 1h → WhatsApp boas-vindas
+- Proposta sem resposta 48h → Follow-up + Asset A2
+- Diagnóstico parado 48h → Enviar material A1
+- Demonstração sem retorno 24h → WhatsApp
+- Distribuidor aprovado sem pedido 7d → Ligação + B2
+- Lead sumido 72h → Reativação
 
----
+## Próximos Passos
 
-## 4. Melhorias no LeadProfile.tsx
-
-### 4.1 Indicador visual de pipeline
-Adicionar uma barra de progresso horizontal mostrando todas as etapas do pipeline com a etapa atual destacada (stepper visual).
-
-### 4.2 Botao de deletar lead
-Adicionar opcao para deletar/arquivar lead (ja existe `useDeleteLead` mas nao esta na UI).
-
-### 4.3 Contador de interacoes
-Mostrar total de interacoes no header do historico.
-
----
-
-## 5. Melhorias no NBA Engine (nba-engine.ts)
-
-### 5.1 Regras para novos leads
-Adicionar regra: lead NOVO_LEAD sem contato ha 1 hora -> sugerir primeiro WhatsApp com script de boas-vindas.
-
-### 5.2 Mensagens sugeridas por etapa
-Adicionar mensagens sugeridas para mais etapas do pipeline (atualmente so cobre Demonstracao e leads sumidos). Incluir:
-- QUALIFICADO: script de diagnostico
-- PROPOSTA_CONDICAO: script de follow-up
-- ATIVACAO: script de boas-vindas pos-venda
-- RECORRENCIA: script de recompra
-
----
-
-## 6. Melhorias no Sales Coach (Edge Function)
-
-### 6.1 Enviar contagem de interacoes
-O hook `useSalesCoach` atualmente nao envia `interactions_count` nem `last_interaction_type` (campos que a edge function espera). Corrigir para buscar e enviar esses dados.
-
-### 6.2 Enviar nome da trilha de nutricao
-O hook tambem nao envia `nurture_track_name`. Adicionar essa informacao ao contexto.
-
----
-
-## 7. Melhorias no TaskList.tsx
-
-### 7.1 Mostrar nome do lead nas tarefas do dashboard
-Atualmente o TaskList no dashboard nao mostra o nome do lead associado. Criar uma query que faca join ou lookup do nome do lead.
-
----
-
-## 8. Melhorias na pagina de Assets
-
-### 8.1 Indicador de audiencia
-Mostrar badges "Profissional" / "Distribuidor" nos cards de assets indicando para qual tipo de lead o material serve.
-
----
-
-## Detalhes Tecnicos da Implementacao
-
-### Arquivos a criar:
-- Nenhum arquivo novo necessario
-
-### Arquivos a modificar:
-
-| Arquivo | Mudancas |
-|---------|----------|
-| `.lovable/plan.md` | Reescrever com estado atual do projeto |
-| `README.md` | Atualizar tecnologias, estrutura, status |
-| `CONTRIBUTING.md` | Sincronizar arvore de arquivos |
-| `src/pages/Index.tsx` | Adicionar resumo de pipeline |
-| `src/pages/Leads.tsx` | Adicionar filtros avancados por tipo, prioridade, etapa, status |
-| `src/pages/LeadProfile.tsx` | Adicionar stepper de pipeline, botao deletar, contador de interacoes |
-| `src/components/dashboard/MetricsCards.tsx` | Usar `useActiveLeads` para total real de leads ativos |
-| `src/lib/nba-engine.ts` | Adicionar regras e mensagens para NOVO_LEAD, QUALIFICADO, ATIVACAO, RECORRENCIA |
-| `src/hooks/useSalesCoach.ts` | Enviar interactions_count, last_interaction_type, nurture_track_name |
-| `src/pages/Assets.tsx` | Mostrar badges de audiencia (for_lead_type) |
-| `src/components/tasks/TaskList.tsx` | Preparar para mostrar lead name quando disponivel |
-
-### Ordem de implementacao:
-1. Documentacao (plan.md, README.md, CONTRIBUTING.md)
-2. NBA Engine (novas regras e mensagens)
-3. Sales Coach hook (dados de contexto completos)
-4. MetricsCards (metricas mais ricas)
-5. Leads.tsx (filtros avancados)
-6. LeadProfile.tsx (stepper, deletar, contador)
-7. Assets.tsx (badges de audiencia)
-8. Index.tsx (resumo pipeline)
-
+- Integração WhatsApp Business API
+- Relatórios de performance e conversão
+- Importação/exportação de leads (CSV)
+- Notificações push (PWA)
+- Multi-usuário com visão de equipe

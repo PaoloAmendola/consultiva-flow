@@ -19,13 +19,14 @@ import {
   ExternalLink,
   Plus,
   Edit,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-import { useLead, useUpdateLead } from '@/hooks/useLeads';
+import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads';
 import { useInteractions, useCreateInteraction } from '@/hooks/useInteractions';
 import { useTasks } from '@/hooks/useTasks';
 import { useNurtureTracks } from '@/hooks/useNurtureTracks';
@@ -41,6 +42,18 @@ import { AddInteractionModal } from '@/components/leads/AddInteractionModal';
 import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { TaskList } from '@/components/tasks/TaskList';
 import { SalesCoachCard } from '@/components/leads/SalesCoachCard';
+import { PipelineStepper } from '@/components/leads/PipelineStepper';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const LeadProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +68,7 @@ const LeadProfile = () => {
   const { data: tracks } = useNurtureTracks();
   const updateLead = useUpdateLead();
   const createInteraction = useCreateInteraction();
+  const deleteLead = useDeleteLead();
 
   if (leadLoading) {
     return (
@@ -114,6 +128,11 @@ const LeadProfile = () => {
     }
   };
 
+  const handleDeleteLead = async () => {
+    await deleteLead.mutateAsync(lead.id);
+    navigate('/leads');
+  };
+
   const handleSendNurture = async () => {
     if (!currentNurtureStep) return;
 
@@ -127,7 +146,6 @@ const LeadProfile = () => {
       asset_sent: currentNurtureStep.asset_id || null,
     });
 
-    // Advance nurture step
     const nextStep = (lead.nurture_step || 0) + 1;
     const nextStepData = nurtureTrack?.steps[nextStep];
     
@@ -149,6 +167,8 @@ const LeadProfile = () => {
     toast.success('Mensagem de nutrição enviada!');
   };
 
+  const interactionsCount = interactions?.length ?? 0;
+
   return (
     <DashboardLayout 
       title={lead.name} 
@@ -164,6 +184,13 @@ const LeadProfile = () => {
         <ArrowLeft className="h-4 w-4 mr-2" />
         Voltar
       </Button>
+
+      {/* Pipeline Stepper */}
+      <Card className="mb-6">
+        <CardContent className="pt-4 pb-3">
+          <PipelineStepper leadType={lead.lead_type} currentStage={lead.stage} />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main info column */}
@@ -202,6 +229,30 @@ const LeadProfile = () => {
                   <Button size="icon" variant="outline" onClick={() => setEditModalOpen(true)}>
                     <Edit className="h-5 w-5" />
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="icon" variant="outline" className="text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remover lead?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Essa ação é irreversível. Todas as interações e tarefas associadas serão perdidas.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteLead}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Remover
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardHeader>
@@ -250,7 +301,12 @@ const LeadProfile = () => {
           {/* Interaction history */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Histórico</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Histórico</CardTitle>
+                <Badge variant="secondary" className="text-xs">
+                  {interactionsCount} interação{interactionsCount !== 1 ? 'ões' : ''}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent>
               {interactionsLoading ? (

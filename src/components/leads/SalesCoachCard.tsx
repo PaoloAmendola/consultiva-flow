@@ -27,7 +27,7 @@ interface SalesCoachCardProps {
 export function SalesCoachCard({ lead }: SalesCoachCardProps) {
   const [recommendations, setRecommendations] = useState<SalesCoachRecommendation | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const salesCoach = useSalesCoach();
+  const salesCoach = useSalesCoach(lead.id);
 
   const handleGetRecommendations = async () => {
     try {

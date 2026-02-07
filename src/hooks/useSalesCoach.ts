@@ -2,6 +2,8 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EnrichedLead } from './useLeads';
 import { useAssets } from './useAssets';
+import { useInteractions } from './useInteractions';
+import { useNurtureTracks } from './useNurtureTracks';
 import { differenceInDays } from 'date-fns';
 
 export interface SalesCoachRecommendation {
@@ -39,11 +41,15 @@ interface LeadContextForAI {
   nurture_step?: number;
   next_action_type: string;
   observations?: string;
+  interactions_count?: number;
+  last_interaction_type?: string;
   available_assets: { code: string; name: string; type: string }[];
 }
 
-export function useSalesCoach() {
+export function useSalesCoach(leadId?: string) {
   const { data: assets } = useAssets();
+  const { data: interactions } = useInteractions(leadId || '');
+  const { data: tracks } = useNurtureTracks();
 
   return useMutation({
     mutationFn: async (lead: EnrichedLead): Promise<SalesCoachRecommendation> => {
@@ -59,6 +65,9 @@ export function useSalesCoach() {
           type: a.type,
         }));
 
+      // Get nurture track name
+      const nurtureTrack = tracks?.find(t => t.id === lead.nurture_track_id);
+
       const leadContext: LeadContextForAI = {
         name: lead.name,
         lead_type: lead.lead_type,
@@ -69,6 +78,10 @@ export function useSalesCoach() {
         next_action_type: lead.next_action_type,
         observations: lead.observations || undefined,
         available_assets: availableAssets,
+        interactions_count: interactions?.length ?? 0,
+        last_interaction_type: interactions?.[0]?.type || undefined,
+        nurture_track_name: nurtureTrack?.name || undefined,
+        nurture_step: lead.nurture_step ?? undefined,
       };
 
       const { data, error } = await supabase.functions.invoke('sales-coach', {

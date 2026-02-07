@@ -47,6 +47,19 @@ const Assets = () => {
 
   const assetTypes = ['PDF', 'VIDEO', 'IMAGEM', 'LINK', 'AUDIO'];
 
+  const getAudienceBadges = (forLeadType: string[] | null) => {
+    if (!forLeadType || forLeadType.length === 0) return null;
+    return forLeadType.map(type => (
+      <Badge
+        key={type}
+        variant="outline"
+        className={type === 'PROFISSIONAL' ? 'text-xs border-purple-500 text-purple-500' : 'text-xs border-blue-500 text-blue-500'}
+      >
+        {type === 'PROFISSIONAL' ? '👤 Profissional' : '🏢 Distribuidor'}
+      </Badge>
+    ));
+  };
+
   if (error) {
     return (
       <DashboardLayout title="Assets" subtitle="Erro ao carregar">
@@ -134,6 +147,7 @@ const Assets = () => {
                     <div className="flex flex-wrap gap-1">
                       <Badge variant="secondary" className="text-xs">{asset.type}</Badge>
                       <Badge variant="outline" className="text-xs">{asset.code}</Badge>
+                      {getAudienceBadges(asset.for_lead_type)}
                       {asset.tags?.map(tag => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           #{tag}
