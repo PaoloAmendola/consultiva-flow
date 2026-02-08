@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
+import { ImportLeadsModal } from '@/components/leads/ImportLeadsModal';
+import { ExportLeadsButton } from '@/components/leads/ExportLeadsButton';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -113,7 +115,11 @@ const Leads = () => {
               </Badge>
             )}
           </Button>
-          <CreateLeadForm />
+          <div className="flex items-center gap-2">
+            <ImportLeadsModal />
+            <ExportLeadsButton />
+            <CreateLeadForm />
+          </div>
         </div>
 
         {/* Advanced filters */}

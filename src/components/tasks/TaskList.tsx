@@ -1,13 +1,15 @@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CheckCircle, XCircle, Clock, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { useOpenTasks, useCompleteTask, useCancelTask } from '@/hooks/useTasks';
-import { ACTION_TYPE_CONFIG, PRIORITY_CONFIG, DbTask } from '@/types/database';
+import { useActiveLeads } from '@/hooks/useLeads';
+import { ACTION_TYPE_CONFIG, DbTask } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 
 interface TaskListProps {
   tasks?: DbTask[];
@@ -17,12 +19,18 @@ interface TaskListProps {
 
 export function TaskList({ tasks: externalTasks, showLeadName = true, maxItems = 10 }: TaskListProps) {
   const { data: internalTasks, isLoading } = useOpenTasks();
+  const { data: leads } = useActiveLeads();
   const completeTask = useCompleteTask();
   const cancelTask = useCancelTask();
 
-  // Use external tasks if provided, otherwise use internal query
   const tasks = externalTasks ?? internalTasks;
   const loading = externalTasks === undefined ? isLoading : false;
+
+  // Build lead name lookup
+  const leadNames = useMemo(() => {
+    if (!leads) return {};
+    return Object.fromEntries(leads.map(l => [l.id, l.name]));
+  }, [leads]);
 
   if (loading) {
     return (
@@ -49,6 +57,7 @@ export function TaskList({ tasks: externalTasks, showLeadName = true, maxItems =
       {tasks.slice(0, maxItems).map(task => {
         const isOverdue = new Date(task.due_at) < now;
         const actionLabel = ACTION_TYPE_CONFIG[task.action_type]?.label || task.action_type;
+        const leadName = showLeadName ? leadNames[task.lead_id] : null;
         
         return (
           <div 
@@ -58,7 +67,6 @@ export function TaskList({ tasks: externalTasks, showLeadName = true, maxItems =
               isOverdue ? "border-destructive/50" : "border-transparent"
             )}
           >
-            {/* Priority indicator */}
             <div className={cn(
               'w-1.5 h-10 rounded-full flex-shrink-0',
               task.priority === 'P1' && 'bg-destructive',
@@ -67,24 +75,25 @@ export function TaskList({ tasks: externalTasks, showLeadName = true, maxItems =
               task.priority === 'P4' && 'bg-muted-foreground',
             )} />
             
-            {/* Task content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="font-medium text-sm text-foreground truncate">
                   {task.title}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                 <Badge variant="outline" className="text-xs">
                   {actionLabel}
                 </Badge>
+                {leadName && (
+                  <span className="truncate max-w-[120px]">👤 {leadName}</span>
+                )}
                 <span className={cn(isOverdue && 'text-destructive')}>
                   {isOverdue ? 'Atrasada' : format(new Date(task.due_at), "dd/MM HH:mm", { locale: ptBR })}
                 </span>
               </div>
             </div>
             
-            {/* Actions */}
             <div className="flex items-center gap-1">
               <Button
                 size="icon"
