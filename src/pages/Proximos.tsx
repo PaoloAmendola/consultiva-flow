@@ -114,22 +114,25 @@ const Proximos = () => {
           ))}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {groupedByDay.map((day, index) => (
             <div key={day.label} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
-              <div className="flex items-center gap-3 mb-3">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  {day.label}
-                </h2>
+              <div className="flex items-center gap-3 mb-3 sticky top-16 z-10 bg-background/95 backdrop-blur-sm py-2 -mx-1 px-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <h2 className="text-sm font-semibold text-foreground capitalize">
+                    {day.label}
+                  </h2>
+                </div>
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
                   {day.leads.length} ação{day.leads.length !== 1 ? 'ões' : ''}
                 </span>
               </div>
 
               {day.leads.length === 0 ? (
-                <div className="p-4 border border-dashed border-border rounded-xl text-center">
-                  <p className="text-sm text-muted-foreground">Nenhuma ação agendada</p>
+                <div className="p-6 border border-dashed border-border rounded-xl text-center">
+                  <p className="text-sm text-muted-foreground">📅 Dia livre — nenhuma ação agendada</p>
                 </div>
               ) : (
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

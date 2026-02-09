@@ -43,17 +43,18 @@ export function PipelineSummary() {
           <CardTitle className="text-lg">Pipeline</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2.5">
         {entries.map(([key, { label, count, color }]) => (
-          <div key={key} className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground w-28 truncate">{label}</span>
-            <div className="flex-1 h-5 bg-secondary rounded-full overflow-hidden">
+          <div key={key} className="flex items-center gap-3 group">
+            <span className="text-xs text-muted-foreground w-28 truncate group-hover:text-foreground transition-colors">{label}</span>
+            <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
               <div
-                className={cn('h-full rounded-full transition-all', color)}
-                style={{ width: `${(count / maxCount) * 100}%` }}
-              />
+                className={cn('h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2', color)}
+                style={{ width: `${Math.max((count / maxCount) * 100, 12)}%` }}
+              >
+                <span className="text-[10px] font-bold text-white drop-shadow-sm">{count}</span>
+              </div>
             </div>
-            <span className="text-xs font-bold text-foreground w-6 text-right">{count}</span>
           </div>
         ))}
       </CardContent>

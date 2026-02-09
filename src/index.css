@@ -126,7 +126,7 @@
   /* Action card styles */
   .action-card {
     @apply bg-card rounded-xl border border-border p-4 transition-all duration-200;
-    @apply active:scale-[0.98] touch-manipulation;
+    @apply hover:border-primary/30 active:scale-[0.98] touch-manipulation;
   }
 
   .action-card-urgent {
@@ -143,7 +143,7 @@
 
   /* Touch-friendly buttons */
   .btn-touch {
-    @apply min-h-[48px] min-w-[48px] flex items-center justify-center;
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
     @apply rounded-xl font-medium transition-all duration-200;
     @apply active:scale-95 touch-manipulation;
   }
@@ -165,10 +165,12 @@
 
   .btn-whatsapp {
     @apply btn-touch bg-[hsl(142,70%,45%)] text-white;
+    @apply hover:bg-[hsl(142,70%,40%)];
   }
 
   .btn-call {
     @apply btn-touch bg-info text-white;
+    @apply hover:bg-info/90;
   }
 
   /* Pipeline badges */
@@ -191,18 +193,22 @@
 
   /* Bottom navigation */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border;
-    @apply flex items-center justify-around px-2 py-2;
-    @apply safe-area-pb;
+    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border;
+    @apply flex items-center justify-around px-2 py-1.5;
+    @apply safe-area-pb z-50;
   }
 
   .nav-item {
-    @apply flex flex-col items-center justify-center gap-1 p-2 rounded-xl;
-    @apply text-muted-foreground transition-colors min-w-[64px];
+    @apply flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl;
+    @apply text-muted-foreground transition-all duration-200 min-w-[60px];
   }
 
   .nav-item.active {
-    @apply text-primary bg-primary/10;
+    @apply text-primary;
+  }
+
+  .nav-item.active .nav-dot {
+    @apply opacity-100 scale-100;
   }
 
   /* Safe area padding for mobile */
@@ -227,10 +233,10 @@
 
   /* Floating action button */
   .fab {
-    @apply fixed bottom-24 right-4 w-14 h-14 rounded-full;
+    @apply fixed bottom-20 right-4 w-14 h-14 rounded-full;
     @apply bg-primary text-primary-foreground shadow-lg shadow-primary/25;
     @apply flex items-center justify-center;
-    @apply active:scale-95 transition-transform touch-manipulation;
+    @apply active:scale-95 transition-transform touch-manipulation z-40;
   }
 
   /* Status dot */
@@ -245,6 +251,24 @@
 
   .timeline-dot {
     @apply absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary;
+  }
+
+  /* Smooth page transitions */
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Line clamp */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
