@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useAssets } from '@/hooks/useAssets';
+import { useCreateAsset, useUpdateAsset, useDeleteAsset } from '@/hooks/useAssetMutations';
+import { AssetFormModal } from '@/components/assets/AssetFormModal';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, FileText, Video, Image, Link as LinkIcon, Headphones, ExternalLink, Copy, Package } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Search, FileText, Video, Image, Link as LinkIcon, Headphones, ExternalLink, Copy, Package, Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { DbAsset } from '@/types/database';
 
 const ASSET_TYPE_CONFIG: Record<string, { icon: typeof FileText; color: string }> = {
   PDF: { icon: FileText, color: 'bg-red-500/20 text-red-400' },
@@ -24,11 +28,20 @@ const Assets = () => {
   const [audienceFilter, setAudienceFilter] = useState<string | null>(null);
   const { data: assets, isLoading, error } = useAssets();
 
+  // Mutations
+  const createAsset = useCreateAsset();
+  const updateAsset = useUpdateAsset();
+  const deleteAsset = useDeleteAsset();
+
+  // Modal state
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<DbAsset | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DbAsset | null>(null);
+
   const filteredAssets = (assets || []).filter(asset => {
     if (typeFilter && asset.type !== typeFilter) return false;
     if (audienceFilter && (!asset.for_lead_type || !asset.for_lead_type.includes(audienceFilter as any))) return false;
     if (!searchQuery) return true;
-    
     const query = searchQuery.toLowerCase();
     return (
       asset.name.toLowerCase().includes(query) ||
@@ -43,9 +56,10 @@ const Assets = () => {
     toast.success('Link copiado!');
   };
 
-  const handleOpen = (url: string) => {
-    window.open(url, '_blank');
-  };
+  const handleOpen = (url: string) => window.open(url, '_blank');
+
+  const openCreate = () => { setEditingAsset(null); setFormOpen(true); };
+  const openEdit = (asset: DbAsset) => { setEditingAsset(asset); setFormOpen(true); };
 
   const assetTypes = ['PDF', 'VIDEO', 'IMAGEM', 'LINK', 'AUDIO'];
 
@@ -64,7 +78,7 @@ const Assets = () => {
       title="Materiais de Venda" 
       subtitle={isLoading ? 'Carregando...' : `${filteredAssets.length} de ${assets?.length || 0} materiais`}
     >
-      {/* Search and filters */}
+      {/* Search, filters, and create button */}
       <div className="space-y-3 mb-6">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 max-w-md">
@@ -76,71 +90,39 @@ const Assets = () => {
               className="pl-10 bg-secondary"
             />
           </div>
+          <Button onClick={openCreate} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Novo Asset
+          </Button>
         </div>
         
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Type filters */}
-          <Button
-            variant={typeFilter === null ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setTypeFilter(null)}
-          >
-            Todos
-          </Button>
+          <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(null)}>Todos</Button>
           {assetTypes.map(type => {
             const config = ASSET_TYPE_CONFIG[type];
             const Icon = config?.icon || FileText;
             return (
-              <Button
-                key={type}
-                variant={typeFilter === type ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTypeFilter(type)}
-                className="gap-1.5"
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {type}
+              <Button key={type} variant={typeFilter === type ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(type)} className="gap-1.5">
+                <Icon className="h-3.5 w-3.5" />{type}
               </Button>
             );
           })}
-
           <div className="w-px h-6 bg-border mx-1" />
-
-          {/* Audience filter */}
-          <Button
-            variant={audienceFilter === 'PROFISSIONAL' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAudienceFilter(audienceFilter === 'PROFISSIONAL' ? null : 'PROFISSIONAL')}
-            className="gap-1"
-          >
-            👤 Profissional
-          </Button>
-          <Button
-            variant={audienceFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setAudienceFilter(audienceFilter === 'DISTRIBUIDOR' ? null : 'DISTRIBUIDOR')}
-            className="gap-1"
-          >
-            🏢 Distribuidor
-          </Button>
+          <Button variant={audienceFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" onClick={() => setAudienceFilter(audienceFilter === 'PROFISSIONAL' ? null : 'PROFISSIONAL')} className="gap-1">👤 Profissional</Button>
+          <Button variant={audienceFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" onClick={() => setAudienceFilter(audienceFilter === 'DISTRIBUIDOR' ? null : 'DISTRIBUIDOR')} className="gap-1">🏢 Distribuidor</Button>
         </div>
       </div>
 
       {/* Asset grid */}
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <Skeleton key={i} className="h-48 rounded-xl" />
-          ))}
+          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
       ) : filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Package className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">
-            Nenhum material encontrado
-          </h3>
+          <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum material encontrado</h3>
           <p className="text-sm text-muted-foreground">
-            {searchQuery || typeFilter || audienceFilter ? 'Tente buscar por outro termo ou ajustar os filtros' : 'Nenhum asset cadastrado'}
+            {searchQuery || typeFilter || audienceFilter ? 'Tente outro termo ou ajuste os filtros' : 'Nenhum asset cadastrado'}
           </p>
         </div>
       ) : (
@@ -148,71 +130,43 @@ const Assets = () => {
           {filteredAssets.map(asset => {
             const config = ASSET_TYPE_CONFIG[asset.type] || ASSET_TYPE_CONFIG.PDF;
             const Icon = config.icon;
-            
             return (
-              <Card
-                key={asset.id}
-                className="group hover:border-primary/30 transition-all duration-200"
-              >
+              <Card key={asset.id} className="group hover:border-primary/30 transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className={cn(
-                      "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0",
-                      config.color
-                    )}>
+                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0", config.color)}>
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
-                          {asset.code}
-                        </Badge>
+                        <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">{asset.code}</Badge>
                       </div>
                       <h3 className="font-semibold text-foreground text-sm leading-tight">{asset.name}</h3>
                     </div>
+                    {/* Edit/Delete */}
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(asset)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => setDeleteTarget(asset)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-
-                  {asset.description && (
-                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{asset.description}</p>
-                  )}
-
+                  {asset.description && <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{asset.description}</p>}
                   <div className="flex flex-wrap gap-1 mb-3">
                     {asset.for_lead_type?.map(type => (
-                      <Badge
-                        key={type}
-                        variant="outline"
-                        className={cn(
-                          "text-[10px]",
-                          type === 'PROFISSIONAL' 
-                            ? 'border-purple-500/40 text-purple-400' 
-                            : 'border-blue-500/40 text-blue-400'
-                        )}
-                      >
+                      <Badge key={type} variant="outline" className={cn("text-[10px]", type === 'PROFISSIONAL' ? 'border-purple-500/40 text-purple-400' : 'border-blue-500/40 text-blue-400')}>
                         {type === 'PROFISSIONAL' ? '👤 Profissional' : '🏢 Distribuidor'}
                       </Badge>
                     ))}
-                    {asset.tags?.slice(0, 3).map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-[10px]">
-                        #{tag}
-                      </Badge>
-                    ))}
+                    {asset.tags?.slice(0, 3).map(tag => <Badge key={tag} variant="secondary" className="text-[10px]">#{tag}</Badge>)}
                   </div>
-                  
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm"
-                      className="flex-1 gap-1.5 h-8 text-xs"
-                      onClick={() => handleOpen(asset.url)}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Abrir
+                    <Button size="sm" className="flex-1 gap-1.5 h-8 text-xs" onClick={() => handleOpen(asset.url)}>
+                      <ExternalLink className="h-3.5 w-3.5" />Abrir
                     </Button>
-                    <Button 
-                      variant="secondary"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => handleCopyLink(asset.url)}
-                    >
+                    <Button variant="secondary" size="sm" className="h-8" onClick={() => handleCopyLink(asset.url)}>
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -222,6 +176,42 @@ const Assets = () => {
           })}
         </div>
       )}
+
+      {/* Form Modal */}
+      <AssetFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        asset={editingAsset}
+        isPending={createAsset.isPending || updateAsset.isPending}
+        onSubmit={(data) => {
+          if (editingAsset) {
+            updateAsset.mutate({ ...data, id: editingAsset.id }, { onSuccess: () => setFormOpen(false) });
+          } else {
+            createAsset.mutate(data, { onSuccess: () => setFormOpen(false) });
+          }
+        }}
+      />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover asset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. O asset "{deleteTarget?.name}" será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { deleteAsset.mutate(deleteTarget!.id); setDeleteTarget(null); }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
