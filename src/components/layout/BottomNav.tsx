@@ -16,15 +16,21 @@ export function BottomNav() {
   return (
     <nav className="bottom-nav">
       {navItems.map((item) => {
-        const isActive = location.pathname === item.href;
+        const isActive = item.href === '/' 
+          ? location.pathname === '/' 
+          : location.pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
             to={item.href}
             className={cn('nav-item', isActive && 'active')}
           >
-            <item.icon className="h-5 w-5" />
-            <span className="text-xs font-medium">{item.label}</span>
+            <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
+            <span className="text-[10px] font-medium">{item.label}</span>
+            <div className={cn(
+              "w-1 h-1 rounded-full bg-primary transition-all",
+              isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
+            )} />
           </Link>
         );
       })}
