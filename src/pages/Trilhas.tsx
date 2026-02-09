@@ -1,19 +1,28 @@
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { useNurtureTracks } from '@/hooks/useNurtureTracks';
+import { useCreateTrack, useUpdateTrack, useDeleteTrack } from '@/hooks/useNurtureTrackMutations';
+import { TrackFormModal } from '@/components/tracks/TrackFormModal';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Phone, Calendar, FileText, Mail, ChevronDown, ChevronUp, Sparkles, Route, Send } from 'lucide-react';
-import { ACTION_TYPE_CONFIG, LeadType } from '@/types/database';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { MessageCircle, Phone, Calendar, FileText, Mail, ChevronDown, ChevronUp, Sparkles, Route, Send, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ACTION_TYPE_CONFIG, LeadType, DbNurtureTrack } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 const Trilhas = () => {
   const { data: tracks, isLoading, error } = useNurtureTracks();
+  const createTrack = useCreateTrack();
+  const updateTrack = useUpdateTrack();
+  const deleteTrack = useDeleteTrack();
+
   const [expandedTrack, setExpandedTrack] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<LeadType | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingTrack, setEditingTrack] = useState<DbNurtureTrack | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DbNurtureTrack | null>(null);
 
   const getActionIcon = (type: string) => {
     switch (type) {
@@ -38,6 +47,9 @@ const Trilhas = () => {
 
   const filteredTracks = (tracks || []).filter(t => !typeFilter || t.lead_type === typeFilter);
 
+  const openCreate = () => { setEditingTrack(null); setFormOpen(true); };
+  const openEdit = (track: DbNurtureTrack) => { setEditingTrack(track); setFormOpen(true); };
+
   if (error) {
     return (
       <DashboardLayout title="Trilhas de Nutrição" subtitle="Erro ao carregar">
@@ -53,38 +65,20 @@ const Trilhas = () => {
       title="Trilhas de Nutrição" 
       subtitle={isLoading ? 'Carregando...' : `${filteredTracks.length} trilhas disponíveis`}
     >
-      {/* Filters */}
-      <div className="flex items-center gap-2 mb-6">
-        <Button
-          variant={typeFilter === null ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setTypeFilter(null)}
-        >
-          Todas
-        </Button>
-        <Button
-          variant={typeFilter === 'PROFISSIONAL' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setTypeFilter('PROFISSIONAL')}
-          className="gap-1.5"
-        >
-          👤 Profissional
-        </Button>
-        <Button
-          variant={typeFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setTypeFilter('DISTRIBUIDOR')}
-          className="gap-1.5"
-        >
-          🏢 Distribuidor
+      {/* Filters + create */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(null)}>Todas</Button>
+        <Button variant={typeFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('PROFISSIONAL')} className="gap-1.5">👤 Profissional</Button>
+        <Button variant={typeFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('DISTRIBUIDOR')} className="gap-1.5">🏢 Distribuidor</Button>
+        <div className="flex-1" />
+        <Button onClick={openCreate} className="gap-1.5">
+          <Plus className="h-4 w-4" /> Nova Trilha
         </Button>
       </div>
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2, 3, 4].map(i => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
-          ))}
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-xl" />)}
         </div>
       ) : filteredTracks.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
@@ -94,13 +88,7 @@ const Trilhas = () => {
             const lastDay = track.steps[totalSteps - 1]?.day ?? 0;
 
             return (
-              <Card 
-                key={track.id} 
-                className={cn(
-                  "transition-all duration-200 overflow-hidden",
-                  isExpanded && "ring-1 ring-primary/30"
-                )}
-              >
+              <Card key={track.id} className={cn("transition-all duration-200 overflow-hidden", isExpanded && "ring-1 ring-primary/30")}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
@@ -108,114 +96,70 @@ const Trilhas = () => {
                         <Sparkles className="h-4 w-4 text-primary" />
                         <CardTitle className="text-base">{track.name}</CardTitle>
                       </div>
-                      {track.description && (
-                        <p className="text-sm text-muted-foreground">{track.description}</p>
-                      )}
+                      {track.description && <p className="text-sm text-muted-foreground">{track.description}</p>}
                     </div>
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "text-xs shrink-0",
-                        track.lead_type === 'DISTRIBUIDOR' 
-                          ? 'border-blue-500/50 text-blue-400' 
-                          : 'border-purple-500/50 text-purple-400'
-                      )}
-                    >
-                      {track.lead_type === 'DISTRIBUIDOR' ? '🏢 Canal' : '👤 Direto'}
-                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(track)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => setDeleteTarget(track)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Badge variant="outline" className={cn("text-xs shrink-0 ml-1", track.lead_type === 'DISTRIBUIDOR' ? 'border-blue-500/50 text-blue-400' : 'border-purple-500/50 text-purple-400')}>
+                        {track.lead_type === 'DISTRIBUIDOR' ? '🏢 Canal' : '👤 Direto'}
+                      </Badge>
+                    </div>
                   </div>
-
-                  {/* Track stats */}
                   <div className="flex items-center gap-4 mt-3">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Route className="h-3.5 w-3.5" />
-                      <span>{totalSteps} passos</span>
+                      <Route className="h-3.5 w-3.5" /><span>{totalSteps} passos</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{lastDay} dias</span>
+                      <Calendar className="h-3.5 w-3.5" /><span>{lastDay} dias</span>
                     </div>
                   </div>
                 </CardHeader>
 
                 <CardContent className="pt-0">
-                  {/* Step timeline preview */}
                   <div className="flex items-center gap-1 mb-3">
                     {track.steps.map((step, idx) => {
                       const Icon = getActionIcon(step.action_type);
                       return (
                         <div key={idx} className="flex items-center">
-                          <div className={cn(
-                            "w-7 h-7 rounded-full flex items-center justify-center border",
-                            getActionColor(step.action_type)
-                          )}>
+                          <div className={cn("w-7 h-7 rounded-full flex items-center justify-center border", getActionColor(step.action_type))}>
                             <Icon className="h-3.5 w-3.5" />
                           </div>
-                          {idx < track.steps.length - 1 && (
-                            <div className="w-3 h-px bg-border" />
-                          )}
+                          {idx < track.steps.length - 1 && <div className="w-3 h-px bg-border" />}
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Expand/collapse */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full gap-2 text-xs"
-                    onClick={() => setExpandedTrack(isExpanded ? null : track.id)}
-                  >
-                    {isExpanded ? (
-                      <>
-                        <ChevronUp className="h-3.5 w-3.5" />
-                        Recolher passos
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-3.5 w-3.5" />
-                        Ver todos os passos
-                      </>
-                    )}
+                  <Button variant="ghost" size="sm" className="w-full gap-2 text-xs" onClick={() => setExpandedTrack(isExpanded ? null : track.id)}>
+                    {isExpanded ? <><ChevronUp className="h-3.5 w-3.5" />Recolher passos</> : <><ChevronDown className="h-3.5 w-3.5" />Ver todos os passos</>}
                   </Button>
 
-                  {/* Expanded steps */}
                   {isExpanded && (
                     <div className="mt-3 space-y-0 animate-fade-in">
                       {track.steps.map((step, index) => {
                         const Icon = getActionIcon(step.action_type);
                         const actionLabel = ACTION_TYPE_CONFIG[step.action_type]?.label || step.action_type;
                         const isLast = index === track.steps.length - 1;
-
                         return (
                           <div key={index} className="relative flex gap-3">
-                            {/* Timeline line */}
                             <div className="flex flex-col items-center">
-                              <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center border z-10",
-                                getActionColor(step.action_type)
-                              )}>
+                              <div className={cn("w-8 h-8 rounded-full flex items-center justify-center border z-10", getActionColor(step.action_type))}>
                                 <span className="text-[10px] font-bold">D{step.day}</span>
                               </div>
-                              {!isLast && (
-                                <div className="w-px flex-1 bg-border min-h-[16px]" />
-                              )}
+                              {!isLast && <div className="w-px flex-1 bg-border min-h-[16px]" />}
                             </div>
-
-                            {/* Content */}
                             <div className={cn("flex-1 pb-4", isLast && "pb-0")}>
                               <div className="flex items-center gap-2 mb-1">
                                 <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                                 <span className="text-xs font-medium text-muted-foreground">{actionLabel}</span>
                               </div>
-                              <div className="bg-secondary/60 rounded-lg p-3 text-sm text-foreground leading-relaxed">
-                                {step.message}
-                              </div>
-                              {step.asset_id && (
-                                <Badge variant="secondary" className="mt-2 text-xs gap-1">
-                                  📎 {step.asset_id}
-                                </Badge>
-                              )}
+                              <div className="bg-secondary/60 rounded-lg p-3 text-sm text-foreground leading-relaxed">{step.message}</div>
+                              {step.asset_id && <Badge variant="secondary" className="mt-2 text-xs gap-1">📎 {step.asset_id}</Badge>}
                             </div>
                           </div>
                         );
@@ -230,14 +174,46 @@ const Trilhas = () => {
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Route className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">
-            Nenhuma trilha cadastrada
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            As trilhas de nutrição serão carregadas do banco de dados
-          </p>
+          <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma trilha cadastrada</h3>
+          <p className="text-sm text-muted-foreground">Clique em "Nova Trilha" para começar</p>
         </div>
       )}
+
+      {/* Form Modal */}
+      <TrackFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        track={editingTrack}
+        isPending={createTrack.isPending || updateTrack.isPending}
+        onSubmit={(data) => {
+          if (editingTrack) {
+            updateTrack.mutate({ ...data, id: editingTrack.id }, { onSuccess: () => setFormOpen(false) });
+          } else {
+            createTrack.mutate(data, { onSuccess: () => setFormOpen(false) });
+          }
+        }}
+      />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover trilha?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. A trilha "{deleteTarget?.name}" será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => { deleteTrack.mutate(deleteTarget!.id); setDeleteTarget(null); }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
