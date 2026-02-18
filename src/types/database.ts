@@ -1,5 +1,4 @@
 // Database types that map to our Supabase tables
-// These are the actual types used in the application, derived from the database schema
 
 export type LeadType = 'PROFISSIONAL' | 'DISTRIBUIDOR' | 'NAO_QUALIFICADO';
 
@@ -43,6 +42,16 @@ export type InteractionType =
 export type InteractionDirection = 'IN' | 'OUT';
 
 export type TaskStatus = 'OPEN' | 'DONE' | 'CANCELED';
+
+// ACENDER® stage type
+export type AcenderStage = 
+  | 'ATRACAO'
+  | 'CONEXAO'
+  | 'ENQUADRAMENTO'
+  | 'NUTRICAO'
+  | 'DEMONSTRACAO'
+  | 'ENCERRAMENTO'
+  | 'RECORRENCIA';
 
 // Database row types
 export interface DbLead {
@@ -143,7 +152,7 @@ export interface DbProfile {
   updated_at: string;
 }
 
-// Insert types (for creating new records)
+// Insert types
 export interface LeadInsert {
   name: string;
   phone: string;
@@ -183,7 +192,6 @@ export interface TaskInsert {
   note?: string | null;
 }
 
-// Update types (for updating existing records)
 export interface LeadUpdate {
   name?: string;
   phone?: string;
@@ -216,33 +224,59 @@ export interface TaskUpdate {
   note?: string | null;
 }
 
-// Pipeline configurations
-export const PROFISSIONAL_STAGES = [
-  { value: 'NOVO_LEAD', label: 'Novo Lead', color: 'bg-blue-500' },
-  { value: 'CONTATO_INICIADO', label: 'Contato Iniciado', color: 'bg-cyan-500' },
-  { value: 'QUALIFICADO', label: 'Qualificado', color: 'bg-teal-500' },
-  { value: 'DIAGNOSTICO', label: 'Diagnóstico', color: 'bg-emerald-500' },
-  { value: 'DEMONSTRACAO_PROVA', label: 'Demonstração/Prova', color: 'bg-green-500' },
-  { value: 'PROPOSTA_CONDICAO', label: 'Proposta/Condição', color: 'bg-yellow-500' },
-  { value: 'FECHADO_GANHOU', label: 'Fechado - Ganhou', color: 'bg-green-600' },
-  { value: 'FECHADO_PERDEU', label: 'Fechado - Perdeu', color: 'bg-red-500' },
-  { value: 'ATIVACAO', label: 'Ativação', color: 'bg-purple-500' },
-  { value: 'RECORRENCIA', label: 'Recorrência', color: 'bg-indigo-500' },
+// ACENDER® Pipeline - unified for all lead types
+export const ACENDER_STAGES = [
+  { value: 'ATRACAO' as const, label: 'Atração', letter: 'A', color: 'bg-red-500', textColor: 'text-red-500', cssVar: '--stage-atracao' },
+  { value: 'CONEXAO' as const, label: 'Conexão', letter: 'C', color: 'bg-yellow-500', textColor: 'text-yellow-500', cssVar: '--stage-conexao' },
+  { value: 'ENQUADRAMENTO' as const, label: 'Enquadramento', letter: 'E', color: 'bg-emerald-500', textColor: 'text-emerald-500', cssVar: '--stage-enquadramento' },
+  { value: 'NUTRICAO' as const, label: 'Nutrição', letter: 'N', color: 'bg-blue-500', textColor: 'text-blue-500', cssVar: '--stage-nutricao' },
+  { value: 'DEMONSTRACAO' as const, label: 'Demonstração', letter: 'D', color: 'bg-purple-500', textColor: 'text-purple-500', cssVar: '--stage-demonstracao' },
+  { value: 'ENCERRAMENTO' as const, label: 'Encerramento', letter: 'E', color: 'bg-orange-500', textColor: 'text-orange-500', cssVar: '--stage-encerramento' },
+  { value: 'RECORRENCIA' as const, label: 'Recorrência', letter: 'R', color: 'bg-zinc-700', textColor: 'text-zinc-400', cssVar: '--stage-recorrencia' },
 ] as const;
 
-export const DISTRIBUIDOR_STAGES = [
-  { value: 'PROSPECT_IDENTIFICADO', label: 'Prospect Identificado', color: 'bg-blue-500' },
-  { value: 'PRE_QUALIFICACAO', label: 'Pré-Qualificação', color: 'bg-cyan-500' },
-  { value: 'REUNIAO_ESTRATEGICA', label: 'Reunião Estratégica', color: 'bg-teal-500' },
-  { value: 'PROPOSTA_COMERCIAL', label: 'Proposta Comercial', color: 'bg-yellow-500' },
-  { value: 'NEGOCIACAO', label: 'Negociação', color: 'bg-orange-500' },
-  { value: 'APROVADO', label: 'Aprovado', color: 'bg-green-500' },
-  { value: 'CADASTRO_CONTRATO', label: 'Cadastro/Contrato', color: 'bg-emerald-500' },
-  { value: 'ONBOARDING', label: 'Onboarding', color: 'bg-teal-600' },
-  { value: 'ATIVACAO', label: 'Ativação', color: 'bg-purple-500' },
-  { value: 'EXPANSAO', label: 'Expansão', color: 'bg-indigo-500' },
-  { value: 'FECHADO_PERDEU', label: 'Fechado - Perdeu', color: 'bg-red-500' },
-] as const;
+// Keep backward compat aliases
+export const PROFISSIONAL_STAGES = ACENDER_STAGES;
+export const DISTRIBUIDOR_STAGES = ACENDER_STAGES;
+
+// Stage guidance: what to do at each stage
+export const STAGE_GUIDANCE: Record<string, { goal: string; instruction: string; nextStage: string | null }> = {
+  ATRACAO: {
+    goal: 'Gerar interesse qualificado',
+    instruction: 'Envie a primeira mensagem personalizada e pergunte sobre o trabalho do lead',
+    nextStage: 'CONEXAO',
+  },
+  CONEXAO: {
+    goal: 'Criar confiança imediata',
+    instruction: 'Faça perguntas leves sobre tipo de cabelo e rotina no salão',
+    nextStage: 'ENQUADRAMENTO',
+  },
+  ENQUADRAMENTO: {
+    goal: 'Qualificar lead (A/B/C)',
+    instruction: 'Aplique as 5 perguntas de qualificação: dor, volume, experiência, tipo de cabelo, prioridade',
+    nextStage: 'NUTRICAO',
+  },
+  NUTRICAO: {
+    goal: 'Educar tecnicamente',
+    instruction: 'Envie os materiais educativos na sequência: Catálogo → Vídeo → Comparativo → ROI → Antes/Depois',
+    nextStage: 'DEMONSTRACAO',
+  },
+  DEMONSTRACAO: {
+    goal: 'Personalizar solução',
+    instruction: 'Monte a proposta personalizada com kit adequado, ROI calculado e garantia',
+    nextStage: 'ENCERRAMENTO',
+  },
+  ENCERRAMENTO: {
+    goal: 'Fechar venda',
+    instruction: 'Aplique o fechamento direto, confirme pedido e colete dados de pagamento',
+    nextStage: 'RECORRENCIA',
+  },
+  RECORRENCIA: {
+    goal: 'Pós-venda (D+2 até D+90)',
+    instruction: 'Acompanhe resultados, colete depoimentos e ofereça reposição',
+    nextStage: null,
+  },
+};
 
 export const ACTION_TYPE_CONFIG: Record<ActionType, { label: string; icon: string }> = {
   WHATSAPP: { label: 'WhatsApp', icon: 'MessageCircle' },
@@ -274,22 +308,46 @@ export const PRIORITY_CONFIG: Record<LeadPriority, { label: string; color: strin
   P4: { label: 'P4 - Baixa', color: 'bg-gray-400 text-white' },
 };
 
-// Helper to get stage config based on lead type
-export function getStagesForLeadType(leadType: LeadType) {
-  if (leadType === 'DISTRIBUIDOR') {
-    return DISTRIBUIDOR_STAGES;
-  }
-  return PROFISSIONAL_STAGES;
+// Helper to get stage config - now always returns ACENDER stages
+export function getStagesForLeadType(_leadType?: LeadType) {
+  return ACENDER_STAGES;
 }
 
-export function getStageLabel(stage: string, leadType: LeadType): string {
-  const stages = getStagesForLeadType(leadType);
-  const found = stages.find(s => s.value === stage);
+export function getStageLabel(stage: string, _leadType?: LeadType): string {
+  const found = ACENDER_STAGES.find(s => s.value === stage);
   return found?.label ?? stage;
 }
 
-export function getStageColor(stage: string, leadType: LeadType): string {
-  const stages = getStagesForLeadType(leadType);
-  const found = stages.find(s => s.value === stage);
+export function getStageColor(stage: string, _leadType?: LeadType): string {
+  const found = ACENDER_STAGES.find(s => s.value === stage);
   return found?.color ?? 'bg-gray-500';
+}
+
+export function getStageByValue(stage: string) {
+  return ACENDER_STAGES.find(s => s.value === stage);
+}
+
+// Map old stage names to ACENDER for migration
+export function mapLegacyStage(stage: string): string {
+  const legacyMap: Record<string, string> = {
+    'NOVO_LEAD': 'ATRACAO',
+    'CONTATO_INICIADO': 'CONEXAO',
+    'QUALIFICADO': 'ENQUADRAMENTO',
+    'DIAGNOSTICO': 'ENQUADRAMENTO',
+    'DEMONSTRACAO_PROVA': 'DEMONSTRACAO',
+    'PROPOSTA_CONDICAO': 'ENCERRAMENTO',
+    'FECHADO_GANHOU': 'RECORRENCIA',
+    'ATIVACAO': 'RECORRENCIA',
+    'RECORRENCIA': 'RECORRENCIA',
+    'PROSPECT_IDENTIFICADO': 'ATRACAO',
+    'PRE_QUALIFICACAO': 'CONEXAO',
+    'REUNIAO_ESTRATEGICA': 'ENQUADRAMENTO',
+    'PROPOSTA_COMERCIAL': 'DEMONSTRACAO',
+    'NEGOCIACAO': 'ENCERRAMENTO',
+    'APROVADO': 'ENCERRAMENTO',
+    'CADASTRO_CONTRATO': 'ENCERRAMENTO',
+    'ONBOARDING': 'RECORRENCIA',
+    'EXPANSAO': 'RECORRENCIA',
+  };
+  return legacyMap[stage] || stage;
 }

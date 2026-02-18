@@ -1,5 +1,5 @@
-// Next Best Action Engine - Deterministic rules for lead prioritization and suggestions
-import { DbLead, DbAsset, ActionType, LeadPriority } from '@/types/database';
+// Next Best Action Engine - ACENDER® methodology
+import { DbLead, DbAsset, ActionType, LeadPriority, STAGE_GUIDANCE, mapLegacyStage } from '@/types/database';
 
 export interface NBAResult {
   priority: LeadPriority;
@@ -8,6 +8,8 @@ export interface NBAResult {
   suggestedAction?: ActionType;
   suggestedAssetCode?: string;
   suggestedMessage?: string;
+  stageInstruction?: string;
+  nextStageName?: string;
 }
 
 export function calculateNBA(lead: DbLead, assets?: DbAsset[]): NBAResult {
@@ -20,16 +22,20 @@ export function calculateNBA(lead: DbLead, assets?: DbAsset[]): NBAResult {
   const hoursSinceLastTouch = lastTouchDate 
     ? (now.getTime() - lastTouchDate.getTime()) / (1000 * 60 * 60) 
     : Infinity;
-
-  // Hours since creation (for new leads with no touch)
   const hoursSinceCreation = (now.getTime() - new Date(lead.created_at).getTime()) / (1000 * 60 * 60);
+
+  // Resolve stage (support legacy stage names)
+  const resolvedStage = mapLegacyStage(lead.stage);
+  const guidance = STAGE_GUIDANCE[resolvedStage];
 
   let result: NBAResult = {
     priority: lead.priority,
     isOverdue,
+    stageInstruction: guidance?.instruction,
+    nextStageName: guidance?.nextStage ? STAGE_GUIDANCE[guidance.nextStage]?.goal : undefined,
   };
 
-  // P1: Ação vencida
+  // P1: Overdue action
   if (isOverdue) {
     result.priority = 'P1';
     if (hoursOverdue < 1) {
@@ -42,190 +48,117 @@ export function calculateNBA(lead: DbLead, assets?: DbAsset[]): NBAResult {
     }
   }
 
-  // PROFISSIONAL pipeline rules
-  if (lead.lead_type === 'PROFISSIONAL') {
-    // Novo lead sem contato há 1 hora -> primeiro WhatsApp
-    if (lead.stage === 'NOVO_LEAD' && !lastTouchDate && hoursSinceCreation > 1) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Tudo bem? Vi que você se interessou pelos nossos produtos. Posso te ajudar a encontrar a solução ideal para o seu espaço?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Novo lead aguardando primeiro contato';
-        result.priority = 'P1';
+  // ACENDER® stage-specific rules
+  switch (resolvedStage) {
+    case 'ATRACAO':
+      if (!lastTouchDate && hoursSinceCreation > 1) {
+        result.suggestedAction = 'WHATSAPP';
+        result.suggestedMessage = `Oi {nome}! Vi que você se interessou pelos nossos produtos profissionais. Posso te mostrar como nossa linha pode transformar seus resultados? 💇‍♀️`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Novo lead aguardando primeiro contato';
+          result.priority = 'P1';
+        }
       }
-    }
+      break;
 
-    // Contato iniciado sem qualificação 24h
-    if (lead.stage === 'CONTATO_INICIADO' && hoursSinceLastTouch > 24) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Consegui dar uma olhada no que conversamos. Quero entender melhor sua rotina — posso te fazer algumas perguntas rápidas?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Lead não qualificado ainda';
-        result.priority = 'P2';
+    case 'CONEXAO':
+      if (hoursSinceLastTouch > 24) {
+        result.suggestedAction = 'WHATSAPP';
+        result.suggestedMessage = `Oi {nome}! Quero entender melhor sua rotina pra te recomendar exatamente o que vai funcionar pra você. Pode me contar que tipo de cabelo você mais atende? 💁‍♀️`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Aguardando criar conexão';
+          result.priority = 'P2';
+        }
       }
-    }
+      break;
 
-    // Qualificado sem diagnóstico 24h -> script de diagnóstico
-    if (lead.stage === 'QUALIFICADO' && hoursSinceLastTouch > 24) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Quero entender melhor o dia a dia do seu trabalho pra recomendar os produtos certos. Posso te ligar rapidinho ou prefere por aqui?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Aguardando diagnóstico';
-        result.priority = 'P2';
+    case 'ENQUADRAMENTO':
+      if (hoursSinceLastTouch > 24) {
+        result.suggestedAction = 'WHATSAPP';
+        result.suggestedMessage = `Oi {nome}! Quero te fazer algumas perguntas rápidas pra personalizar a indicação. Qual a maior dificuldade com os produtos que usa hoje?`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Aguardando qualificação';
+          result.priority = 'P2';
+        }
       }
-    }
+      break;
 
-    // Diagnóstico sem proposta 48h -> enviar prova + A1/A3
-    if (lead.stage === 'DIAGNOSTICO' && hoursSinceLastTouch > 48) {
-      result.suggestedAction = 'ENVIAR_MATERIAL';
-      result.suggestedAssetCode = 'A1';
-      result.suggestedMessage = `Oi {nome}! Preparei um material especial baseado no que conversamos. Dá uma olhada e me fala o que achou!`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Diagnóstico sem proposta há 48h';
-        result.priority = 'P2';
+    case 'NUTRICAO':
+      if (hoursSinceLastTouch > 48) {
+        result.suggestedAction = 'ENVIAR_MATERIAL';
+        result.suggestedAssetCode = 'A1';
+        result.suggestedMessage = `Oi {nome}! Preparei um material especial baseado no que conversamos. Dá uma olhada e me fala o que achou! 📄`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Nutrição parada há 48h';
+          result.priority = 'P2';
+        }
       }
-    }
+      break;
 
-    // Demonstração/Prova sem retorno 24h
-    if (lead.stage === 'DEMONSTRACAO_PROVA' && hoursSinceLastTouch > 24) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Como foi a experiência com o produto? Conseguiu testar?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Aguardando feedback da demonstração';
-        result.priority = 'P2';
+    case 'DEMONSTRACAO':
+      if (hoursSinceLastTouch > 24) {
+        result.suggestedAction = 'ENVIAR_PROPOSTA';
+        result.suggestedMessage = `Oi {nome}! Montei uma proposta personalizada com o kit ideal pra sua realidade. Posso te mandar os detalhes? 🎯`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Aguardando demonstração/proposta';
+          result.priority = 'P2';
+        }
       }
-    }
+      break;
 
-    // Proposta sem resposta 48h -> follow-up + A2
-    if (lead.stage === 'PROPOSTA_CONDICAO' && hoursSinceLastTouch > 48) {
-      result.suggestedAction = 'FOLLOW_UP';
-      result.suggestedAssetCode = 'A2';
-      result.suggestedMessage = `Oi {nome}! Conseguiu analisar a proposta que enviei? Posso esclarecer qualquer dúvida. Temos uma condição especial essa semana!`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Proposta sem resposta há 48h';
-        result.priority = 'P1';
+    case 'ENCERRAMENTO':
+      if (hoursSinceLastTouch > 48) {
+        result.suggestedAction = 'FOLLOW_UP';
+        result.suggestedMessage = `Oi {nome}! Conseguiu analisar a proposta? Posso esclarecer qualquer dúvida. Temos uma condição especial essa semana! ⏰`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Proposta sem resposta há 48h';
+          result.priority = 'P1';
+        }
       }
-    }
+      break;
 
-    // Ativação -> boas-vindas pós-venda
-    if (lead.stage === 'ATIVACAO' && hoursSinceLastTouch > 48) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Parabéns pela escolha! 🎉 Como está sendo a experiência com os produtos? Qualquer dúvida sobre uso, estou aqui!`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Ativação parada — acompanhar pós-venda';
-        result.priority = 'P2';
+    case 'RECORRENCIA':
+      if (hoursSinceLastTouch > 168) { // 7 days
+        result.suggestedAction = 'WHATSAPP';
+        result.suggestedMessage = `Oi {nome}! Tudo bem? Já faz um tempinho desde nosso último contato. Pode ser hora de repor o estoque — quer que eu prepare um pedido? 🔄`;
+        if (!result.overdueReason) {
+          result.overdueReason = 'Sem contato há 7 dias — oportunidade de recompra';
+          result.priority = 'P3';
+        }
       }
-    }
-
-    // Recorrência -> recompra
-    if (lead.stage === 'RECORRENCIA' && hoursSinceLastTouch > 168) { // 7 days
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Tudo bem? Já faz um tempinho desde nosso último contato. Vi que pode ser hora de repor o estoque — quer que eu prepare um pedido?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Sem contato há 7 dias — oportunidade de recompra';
-        result.priority = 'P3';
-      }
-    }
+      break;
   }
 
-  // DISTRIBUIDOR pipeline rules
-  if (lead.lead_type === 'DISTRIBUIDOR') {
-    // Prospect sem contato 24h
-    if (lead.stage === 'PROSPECT_IDENTIFICADO' && !lastTouchDate && hoursSinceCreation > 1) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Olá {nome}! Somos a [Empresa] e trabalhamos com uma linha profissional de alta performance. Gostaria de apresentar nossa proposta de parceria — podemos agendar uma conversa?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Novo prospect aguardando contato';
-        result.priority = 'P1';
-      }
-    }
-
-    // Reunião estratégica sem avanço 48h
-    if (lead.stage === 'REUNIAO_ESTRATEGICA' && hoursSinceLastTouch > 48) {
-      result.suggestedAction = 'FOLLOW_UP';
-      result.suggestedMessage = `Oi {nome}! Foi ótimo conversar sobre a parceria. Estou preparando a proposta comercial — devo ter pronta até amanhã. Alguma dúvida que eu possa adiantar?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Reunião realizada, aguardando proposta';
-        result.priority = 'P2';
-      }
-    }
-
-    // Proposta comercial sem resposta 72h
-    if (lead.stage === 'PROPOSTA_COMERCIAL' && hoursSinceLastTouch > 72) {
-      result.suggestedAction = 'FOLLOW_UP';
-      result.suggestedAssetCode = 'B1';
-      if (!result.overdueReason) {
-        result.overdueReason = 'Proposta comercial sem resposta há 72h';
-        result.priority = 'P1';
-      }
-    }
-
-    // Aprovado sem pedido piloto 7 dias
-    if (lead.stage === 'APROVADO' && hoursSinceLastTouch > 168) { // 7 days
-      result.suggestedAction = 'LIGACAO';
-      result.suggestedAssetCode = 'B2';
-      if (!result.overdueReason) {
-        result.overdueReason = 'Sem pedido piloto há 7 dias';
-        result.priority = 'P1';
-      }
-    }
-
-    // Onboarding parado 48h
-    if (lead.stage === 'ONBOARDING' && hoursSinceLastTouch > 48) {
-      result.suggestedAction = 'WHATSAPP';
-      result.suggestedMessage = `Oi {nome}! Como está o processo de cadastro? Precisa de algum suporte da nossa equipe para agilizar?`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Onboarding parado';
-        result.priority = 'P2';
-      }
-    }
-
-    // Ativação distribuidor
-    if (lead.stage === 'ATIVACAO' && hoursSinceLastTouch > 72) {
-      result.suggestedAction = 'LIGACAO';
-      result.suggestedMessage = `Oi {nome}! Quero saber como estão as primeiras vendas. Posso compartilhar dicas de posicionamento e sell-out que funcionam muito bem com outros parceiros.`;
-      if (!result.overdueReason) {
-        result.overdueReason = 'Parceiro em ativação — acompanhar';
-        result.priority = 'P2';
-      }
-    }
-  }
-
-  // Lead sumiu 24-72h sem estar em nurture -> sugerir reativação
+  // Lead sumiu 24-72h sem nurture
   if (hoursSinceLastTouch > 24 && hoursSinceLastTouch < 72 && !lead.nurture_track_id) {
     if (!result.suggestedMessage) {
       result.suggestedMessage = `Oi {nome}! Tudo bem? Passou por aqui pra saber como posso te ajudar.`;
     }
   }
 
-  // Lead sumiu mais de 72h -> T6 reativação
+  // Lead sumiu mais de 72h
   if (hoursSinceLastTouch > 72 && !lead.nurture_track_id) {
     if (!result.overdueReason) {
       result.overdueReason = 'Lead sem contato há mais de 3 dias';
     }
   }
 
-  // Resolve suggested asset to full object if available
+  // Resolve suggested asset
   if (result.suggestedAssetCode && assets) {
     const asset = assets.find(a => a.code === result.suggestedAssetCode);
     if (asset) {
-      result.suggestedMessage = result.suggestedMessage || 
-        `Enviar ${asset.name} para reforçar o interesse`;
+      result.suggestedMessage = result.suggestedMessage || `Enviar ${asset.name} para reforçar o interesse`;
     }
   }
 
   return result;
 }
 
-// Enrich lead with NBA data for display
 export function enrichLeadWithNBA(lead: DbLead, assets?: DbAsset[]): DbLead & NBAResult {
   const nba = calculateNBA(lead, assets);
-  return {
-    ...lead,
-    ...nba,
-  };
+  return { ...lead, ...nba };
 }
 
-// Calculate priority score for sorting
 export function getPriorityScore(priority: LeadPriority): number {
   switch (priority) {
     case 'P1': return 4;
@@ -236,18 +169,12 @@ export function getPriorityScore(priority: LeadPriority): number {
   }
 }
 
-// Sort leads by actionability
 export function sortLeadsByActionability(leads: (DbLead & NBAResult)[]): (DbLead & NBAResult)[] {
   return [...leads].sort((a, b) => {
-    // First: overdue leads
     if (a.isOverdue && !b.isOverdue) return -1;
     if (!a.isOverdue && b.isOverdue) return 1;
-    
-    // Second: by priority
     const priorityDiff = getPriorityScore(a.priority) - getPriorityScore(b.priority);
     if (priorityDiff !== 0) return -priorityDiff;
-    
-    // Third: by next action date (soonest first)
     return new Date(a.next_action_at).getTime() - new Date(b.next_action_at).getTime();
   });
 }

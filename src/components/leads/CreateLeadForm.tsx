@@ -35,8 +35,7 @@ import {
   ActionType,
   ORIGIN_LABELS,
   ACTION_TYPE_CONFIG,
-  PROFISSIONAL_STAGES,
-  DISTRIBUIDOR_STAGES,
+  ACENDER_STAGES,
 } from '@/types/database';
 
 const leadSchema = z.object({
@@ -82,7 +81,7 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
       state: '',
       lead_type: 'PROFISSIONAL',
       origin: 'INSTAGRAM',
-      stage: 'NOVO_LEAD',
+      stage: 'ATRACAO',
       next_action_type: 'WHATSAPP',
       next_action_at: new Date().toISOString().slice(0, 16),
       next_action_note: '',
@@ -90,8 +89,7 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
     },
   });
 
-  const selectedLeadType = form.watch('lead_type');
-  const stages = selectedLeadType === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
+  const stages = ACENDER_STAGES;
 
   const onSubmit = async (data: LeadFormData) => {
     try {
@@ -104,7 +102,7 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
         state: data.state || null,
         lead_type: data.lead_type,
         origin: data.origin,
-        stage: data.stage || 'NOVO_LEAD',
+        stage: data.stage || 'ATRACAO',
         next_action_type: data.next_action_type,
         next_action_at: new Date(data.next_action_at).toISOString(),
         next_action_note: data.next_action_note || null,
