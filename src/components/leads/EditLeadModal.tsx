@@ -30,16 +30,13 @@ import { useUpdateLead } from '@/hooks/useLeads';
 import { useNurtureTracks } from '@/hooks/useNurtureTracks';
 import { EnrichedLead } from '@/hooks/useLeads';
 import { 
-  LeadType, 
   LeadOrigin, 
   LeadPriority,
-  LeadStatusFinal,
   ActionType,
   ORIGIN_LABELS,
   ACTION_TYPE_CONFIG,
   PRIORITY_CONFIG,
-  PROFISSIONAL_STAGES,
-  DISTRIBUIDOR_STAGES,
+  ACENDER_STAGES,
 } from '@/types/database';
 
 const editLeadSchema = z.object({
@@ -97,7 +94,7 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
       state: '',
       lead_type: 'PROFISSIONAL',
       origin: 'INSTAGRAM',
-      stage: 'NOVO_LEAD',
+      stage: 'ATRACAO',
       priority: 'P3',
       status_final: 'ATIVO',
       nurture_track_id: '',
@@ -132,9 +129,8 @@ export function EditLeadModal({ lead, open, onOpenChange }: EditLeadModalProps) 
     }
   }, [lead, form]);
 
-  const selectedLeadType = form.watch('lead_type');
-  const stages = selectedLeadType === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
-  const filteredTracks = nurtureTracks?.filter(t => t.lead_type === selectedLeadType) || [];
+  const stages = ACENDER_STAGES;
+  const filteredTracks = nurtureTracks || [];
 
   const onSubmit = async (data: EditLeadFormData) => {
     if (!lead) return;

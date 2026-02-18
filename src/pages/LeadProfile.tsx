@@ -31,11 +31,12 @@ import { useInteractions, useCreateInteraction } from '@/hooks/useInteractions';
 import { useTasks } from '@/hooks/useTasks';
 import { useNurtureTracks } from '@/hooks/useNurtureTracks';
 import { 
-  PROFISSIONAL_STAGES, 
-  DISTRIBUIDOR_STAGES, 
+  ACENDER_STAGES,
   ORIGIN_LABELS,
   ACTION_TYPE_CONFIG,
   PRIORITY_CONFIG,
+  mapLegacyStage,
+  STAGE_GUIDANCE,
 } from '@/types/database';
 import { EditLeadModal } from '@/components/leads/EditLeadModal';
 import { AddInteractionModal } from '@/components/leads/AddInteractionModal';
@@ -95,8 +96,8 @@ const LeadProfile = () => {
     );
   }
 
-  const stages = lead.lead_type === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
-  const currentStage = stages.find(s => s.value === lead.stage);
+  const resolvedStage = mapLegacyStage(lead.stage);
+  const currentStage = ACENDER_STAGES.find(s => s.value === resolvedStage);
   const nurtureTrack = tracks?.find(t => t.id === lead.nurture_track_id);
   const currentNurtureStep = nurtureTrack?.steps[lead.nurture_step || 0];
 
@@ -188,7 +189,7 @@ const LeadProfile = () => {
       {/* Pipeline Stepper */}
       <Card className="mb-6">
         <CardContent className="pt-4 pb-3">
-          <PipelineStepper leadType={lead.lead_type} currentStage={lead.stage} />
+          <PipelineStepper currentStage={lead.stage} />
         </CardContent>
       </Card>
 

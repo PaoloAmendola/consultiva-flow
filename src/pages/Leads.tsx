@@ -11,18 +11,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ChevronRight, Clock, Filter, X } from 'lucide-react';
 import { useActiveLeads } from '@/hooks/useLeads';
 import { 
-  PROFISSIONAL_STAGES, 
-  DISTRIBUIDOR_STAGES, 
+  ACENDER_STAGES,
   ORIGIN_LABELS,
-  LeadType,
   LeadPriority,
+  mapLegacyStage,
 } from '@/types/database';
 import { cn } from '@/lib/utils';
-
-const LEAD_TYPE_OPTIONS: { value: LeadType; label: string }[] = [
-  { value: 'PROFISSIONAL', label: 'Profissional' },
-  { value: 'DISTRIBUIDOR', label: 'Distribuidor' },
-];
 
 const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
   { value: 'P1', label: 'P1' },
@@ -32,7 +26,6 @@ const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
 ];
 
 interface LeadFilters {
-  leadType?: LeadType;
   priority?: LeadPriority;
   stage?: string;
 }
@@ -47,8 +40,8 @@ const Leads = () => {
     if (!leads) return [];
     
     return leads.filter(lead => {
-      if (filters.leadType && lead.lead_type !== filters.leadType) return false;
       if (filters.priority && lead.priority !== filters.priority) return false;
+      if (filters.stage && mapLegacyStage(lead.stage) !== filters.stage) return false;
       if (filters.stage && lead.stage !== filters.stage) return false;
       
       if (!searchQuery) return true;
@@ -64,13 +57,7 @@ const Leads = () => {
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
-  const availableStages = useMemo(() => {
-    if (filters.leadType === 'DISTRIBUIDOR') return [...DISTRIBUIDOR_STAGES];
-    if (filters.leadType === 'PROFISSIONAL') return [...PROFISSIONAL_STAGES];
-    return [...PROFISSIONAL_STAGES, ...DISTRIBUIDOR_STAGES].filter(
-      (stage, i, arr) => arr.findIndex(s => s.value === stage.value) === i
-    );
-  }, [filters.leadType]);
+  const availableStages = ACENDER_STAGES;
 
   const clearFilters = () => setFilters({});
 
@@ -125,22 +112,21 @@ const Leads = () => {
         {/* Advanced filters */}
         {showFilters && (
           <div className="flex flex-wrap items-center gap-3 p-4 bg-secondary/50 rounded-xl animate-fade-in">
-            {/* Lead type */}
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground mr-1">Tipo:</span>
-              {LEAD_TYPE_OPTIONS.map(opt => (
+            {/* Etapa ACENDER */}
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-xs text-muted-foreground mr-1">Etapa:</span>
+              {availableStages.map(stage => (
                 <Button
-                  key={opt.value}
-                  variant={filters.leadType === opt.value ? 'default' : 'outline'}
+                  key={stage.value}
+                  variant={filters.stage === stage.value ? 'default' : 'outline'}
                   size="sm"
                   className="h-7 text-xs"
                   onClick={() => setFilters(f => ({
                     ...f,
-                    leadType: f.leadType === opt.value ? undefined : opt.value,
-                    stage: f.leadType === opt.value ? f.stage : undefined,
+                    stage: f.stage === stage.value ? undefined : stage.value,
                   }))}
                 >
-                  {opt.label}
+                  {stage.letter} · {stage.label}
                 </Button>
               ))}
             </div>
@@ -160,25 +146,6 @@ const Leads = () => {
                   }))}
                 >
                   {opt.label}
-                </Button>
-              ))}
-            </div>
-
-            {/* Stage */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-xs text-muted-foreground mr-1">Etapa:</span>
-              {availableStages.slice(0, 6).map(stage => (
-                <Button
-                  key={stage.value}
-                  variant={filters.stage === stage.value ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => setFilters(f => ({
-                    ...f,
-                    stage: f.stage === stage.value ? undefined : stage.value,
-                  }))}
-                >
-                  {stage.label}
                 </Button>
               ))}
             </div>
@@ -213,8 +180,8 @@ const Leads = () => {
           </div>
         ) : (
           filteredLeads.map(lead => {
-            const stages = lead.lead_type === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
-            const currentStage = stages.find(s => s.value === lead.stage);
+            const resolvedStage = mapLegacyStage(lead.stage);
+            const currentStage = ACENDER_STAGES.find(s => s.value === resolvedStage);
             
             return (
               <Link
@@ -242,8 +209,8 @@ const Leads = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary" className={cn('text-xs', currentStage?.color)}>
-                      {currentStage?.label || lead.stage}
+                    <Badge variant="secondary" className={cn('text-xs text-white', currentStage?.color)}>
+                      {currentStage?.letter} · {currentStage?.label || lead.stage}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {ORIGIN_LABELS[lead.origin]}

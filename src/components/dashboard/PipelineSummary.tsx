@@ -1,7 +1,7 @@
 import { useActiveLeads } from '@/hooks/useLeads';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PROFISSIONAL_STAGES, DISTRIBUIDOR_STAGES } from '@/types/database';
+import { ACENDER_STAGES, mapLegacyStage } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { BarChart3 } from 'lucide-react';
 
@@ -14,16 +14,15 @@ export function PipelineSummary() {
 
   if (!leads || leads.length === 0) return null;
 
-  // Count leads per stage
-  const allStages = [...PROFISSIONAL_STAGES, ...DISTRIBUIDOR_STAGES];
-  const stageCounts: Record<string, { label: string; count: number; color: string }> = {};
+  // Count leads per ACENDER stage
+  const stageCounts: Record<string, { label: string; count: number; color: string; letter: string }> = {};
 
   leads.forEach(lead => {
-    const stages = lead.lead_type === 'DISTRIBUIDOR' ? DISTRIBUIDOR_STAGES : PROFISSIONAL_STAGES;
-    const stage = stages.find(s => s.value === lead.stage);
+    const resolvedStage = mapLegacyStage(lead.stage);
+    const stage = ACENDER_STAGES.find(s => s.value === resolvedStage);
     if (stage) {
       if (!stageCounts[stage.value]) {
-        stageCounts[stage.value] = { label: stage.label, count: 0, color: stage.color };
+        stageCounts[stage.value] = { label: stage.label, count: 0, color: stage.color, letter: stage.letter };
       }
       stageCounts[stage.value].count++;
     }
@@ -44,9 +43,9 @@ export function PipelineSummary() {
         </div>
       </CardHeader>
       <CardContent className="space-y-2.5">
-        {entries.map(([key, { label, count, color }]) => (
+        {entries.map(([key, { label, count, color, letter }]) => (
           <div key={key} className="flex items-center gap-3 group">
-            <span className="text-xs text-muted-foreground w-28 truncate group-hover:text-foreground transition-colors">{label}</span>
+            <span className="text-xs text-muted-foreground w-28 truncate group-hover:text-foreground transition-colors">{letter} · {label}</span>
             <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden">
               <div
                 className={cn('h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2', color)}
