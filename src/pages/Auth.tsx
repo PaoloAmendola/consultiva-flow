@@ -93,15 +93,15 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 px-4 py-8">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center space-y-1.5 pb-4">
           <div className="flex items-center justify-center gap-2 text-primary">
-            <Sparkles className="h-8 w-8" />
+            <Sparkles className="h-7 w-7" />
           </div>
-          <CardTitle className="text-2xl font-bold">Máquina de Vendas</CardTitle>
-          <CardDescription>
-            CRM para profissionais de beleza e distribuidores
+          <CardTitle className="text-xl font-bold">Máquina de Vendas</CardTitle>
+          <CardDescription className="text-xs">
+            CRM para profissionais de beleza
           </CardDescription>
         </CardHeader>
         <CardContent>

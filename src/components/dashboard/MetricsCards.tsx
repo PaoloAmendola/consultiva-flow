@@ -35,16 +35,13 @@ function MetricCard({ title, value, icon, variant = 'default', subtitle, isLoadi
 
   return (
     <Card className="bg-card border-border hover:border-primary/30 transition-colors">
-      <CardContent className="p-4 flex items-center gap-4">
-        <div className={cn('p-3 rounded-xl', variantStyles[variant])}>
+      <CardContent className="p-3 flex items-center gap-3">
+        <div className={cn('p-2.5 rounded-xl flex-shrink-0', variantStyles[variant])}>
           {icon}
         </div>
-        <div>
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">{title}</p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-          )}
+        <div className="min-w-0">
+          <p className="text-xl font-bold text-foreground">{value}</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{title}</p>
         </div>
       </CardContent>
     </Card>
