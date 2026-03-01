@@ -179,61 +179,64 @@ const LeadProfile = () => {
       <Button 
         variant="ghost" 
         size="sm" 
-        className="mb-4"
+        className="mb-3"
         onClick={() => navigate(-1)}
       >
-        <ArrowLeft className="h-4 w-4 mr-2" />
+        <ArrowLeft className="h-4 w-4 mr-1" />
         Voltar
       </Button>
 
       {/* Pipeline Stepper */}
-      <Card className="mb-6">
-        <CardContent className="pt-4 pb-3">
+      <Card className="mb-4">
+        <CardContent className="pt-3 pb-2 px-3 overflow-x-auto scrollbar-hide">
           <PipelineStepper currentStage={lead.stage} />
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
         {/* Main info column */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4">
           {/* Lead info card */}
           <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
+            <CardHeader className="px-4 pb-3">
+              <div className="space-y-3">
                 <div>
-                  <CardTitle className="text-xl">{lead.name}</CardTitle>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <Badge className={cn(currentStage?.color)}>
+                  <CardTitle className="text-lg">{lead.name}</CardTitle>
+                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                    <Badge className={cn('text-xs', currentStage?.color)}>
                       {currentStage?.label || lead.stage}
                     </Badge>
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="text-xs">
                       {lead.lead_type === 'DISTRIBUIDOR' ? 'Canal' : 'Direto'}
                     </Badge>
-                    <Badge variant="outline" className={PRIORITY_CONFIG[lead.priority]?.color}>
+                    <Badge variant="outline" className={cn('text-xs', PRIORITY_CONFIG[lead.priority]?.color)}>
                       {lead.priority}
                     </Badge>
                     {lead.score && (
-                      <Badge variant="secondary">Score: {lead.score}</Badge>
+                      <Badge variant="secondary" className="text-xs">Score: {lead.score}</Badge>
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="icon" className="bg-green-600 hover:bg-green-700" onClick={handleWhatsApp}>
-                    <MessageCircle className="h-5 w-5" />
+                {/* Action buttons - wrapped for mobile */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Button size="sm" className="btn-whatsapp gap-1.5 h-9" onClick={handleWhatsApp}>
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
                   </Button>
-                  <Button size="icon" className="bg-blue-600 hover:bg-blue-700" onClick={handleCall}>
-                    <Phone className="h-5 w-5" />
+                  <Button size="sm" className="btn-call h-9 gap-1.5" onClick={handleCall}>
+                    <Phone className="h-4 w-4" />
+                    Ligar
                   </Button>
-                  <Button size="icon" variant="outline" onClick={() => setInteractionModalOpen(true)}>
-                    <Plus className="h-5 w-5" />
+                  <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setInteractionModalOpen(true)}>
+                    <Plus className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="outline" onClick={() => setEditModalOpen(true)}>
-                    <Edit className="h-5 w-5" />
+                  <Button size="icon" variant="outline" className="h-9 w-9" onClick={() => setEditModalOpen(true)}>
+                    <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="icon" variant="outline" className="text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-5 w-5" />
+                      <Button size="icon" variant="outline" className="h-9 w-9 text-destructive hover:bg-destructive/10">
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -257,8 +260,8 @@ const LeadProfile = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <CardContent className="px-4 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span>{lead.phone}</span>
@@ -366,7 +369,7 @@ const LeadProfile = () => {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* AI Sales Coach */}
           <SalesCoachCard lead={lead} />
 

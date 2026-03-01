@@ -10,8 +10,7 @@ import { useActionableLeads, useUpdateLead } from '@/hooks/useLeads';
 import { useCreateInteraction } from '@/hooks/useInteractions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus, ListTodo } from 'lucide-react';
+import { ListTodo } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -95,14 +94,14 @@ const Index = () => {
       subtitle={subtitle}
     >
       {/* Metrics Section */}
-      <div className="mb-6">
+      <div className="mb-4 lg:mb-6">
         <MetricsCards />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
         {/* Main content - Actions */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between gap-4">
+        <div className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between gap-2">
             <FilterBar 
               onFilterChange={setFilters}
               activeFilters={filters}
@@ -110,24 +109,24 @@ const Index = () => {
             <CreateLeadForm />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3">
             {isLoading ? (
               <>
                 {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-64 rounded-xl" />
+                  <Skeleton key={i} className="h-48 rounded-xl" />
                 ))}
               </>
             ) : filteredLeads.length === 0 ? (
-              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center mb-4">
-                  <svg className="w-10 h-10 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-3">
+                  <svg className="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-1">
                   Tudo em dia! 🎉
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-3">
                   Nenhuma ação pendente no momento
                 </p>
                 <CreateLeadForm />
@@ -148,13 +147,13 @@ const Index = () => {
         {/* Sidebar - Tasks + Pipeline */}
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 px-4">
               <div className="flex items-center gap-2">
                 <ListTodo className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Tarefas Pendentes</CardTitle>
+                <CardTitle className="text-base">Tarefas Pendentes</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4">
               <TaskList maxItems={5} />
             </CardContent>
           </Card>

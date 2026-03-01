@@ -69,36 +69,36 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
   return (
     <div className={cn('action-card', priorityClass, 'animate-fade-in')}>
       {/* Header: Name + Stage + Priority */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1">
             <Link 
               to={`/leads/${lead.id}`}
-              className="text-base font-semibold text-foreground hover:text-primary transition-colors"
+              className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate"
             >
               {lead.name}
             </Link>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Badge 
               variant="secondary" 
-              className={cn('text-xs text-white', currentStage?.color)}
+              className={cn('text-[10px] text-white px-1.5 py-0', currentStage?.color)}
             >
-              {currentStage?.letter} · {currentStage?.label || lead.stage}
+              {currentStage?.letter}·{currentStage?.label || lead.stage}
             </Badge>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground">
               {ORIGIN_LABELS[lead.origin]}
             </span>
             {lead.company && (
-              <span className="text-xs text-muted-foreground">• {lead.company}</span>
+              <span className="text-[10px] text-muted-foreground">• {lead.company}</span>
             )}
           </div>
         </div>
         <Badge 
           variant="outline" 
           className={cn(
-            'text-xs font-bold',
+            'text-[10px] font-bold flex-shrink-0 ml-2',
             lead.priority === 'P1' && 'border-destructive text-destructive',
             lead.priority === 'P2' && 'border-warning text-warning',
             lead.priority === 'P3' && 'border-info text-info',
@@ -110,22 +110,22 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
       {/* Overdue */}
       {lead.overdueReason && (
-        <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-destructive/10">
-          <Clock className="h-4 w-4 text-destructive flex-shrink-0" />
-          <span className="text-sm text-destructive font-medium">{lead.overdueReason}</span>
+        <div className="flex items-center gap-2 mb-2 p-2 rounded-lg bg-destructive/10">
+          <Clock className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
+          <span className="text-xs text-destructive font-medium">{lead.overdueReason}</span>
         </div>
       )}
 
       {/* O QUE FAZER AGORA */}
-      <div className="mb-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-        <p className="text-xs text-primary uppercase tracking-wide font-semibold mb-1">
+      <div className="mb-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20">
+        <p className="text-[10px] text-primary uppercase tracking-wide font-semibold mb-0.5">
           🎯 O que fazer agora
         </p>
-        <p className="text-sm text-foreground font-medium">
+        <p className="text-xs text-foreground font-medium leading-relaxed">
           {lead.next_action_note || guidance?.instruction || ACTION_TYPE_CONFIG[lead.next_action_type]?.label}
         </p>
         {guidance?.goal && (
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-[10px] text-muted-foreground mt-0.5">
             Objetivo: {guidance.goal}
           </p>
         )}
@@ -133,21 +133,21 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
       {/* O QUE FALAR - suggested message */}
       {lead.suggestedMessage && (
-        <div className="mb-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+        <div className="mb-2">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
             💬 O que falar
           </p>
-          <div className="bg-secondary/50 rounded-lg p-3 relative">
-            <p className="text-sm text-foreground pr-8">
+          <div className="bg-secondary/50 rounded-lg p-2.5 relative">
+            <p className="text-xs text-foreground pr-7 leading-relaxed">
               {lead.suggestedMessage.replace('{nome}', lead.name.split(' ')[0])}
             </p>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-8 w-8"
+              className="absolute top-1.5 right-1.5 h-7 w-7"
               onClick={() => handleCopyMessage()}
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -155,15 +155,15 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
       {/* O QUE ENVIAR */}
       {lead.suggestedAssetCode && (
-        <div className="mb-3">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+        <div className="mb-2">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">
             📎 O que enviar
           </p>
-          <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-3">
-            <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-            <span className="text-sm text-foreground flex-1">Asset: {lead.suggestedAssetCode}</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ExternalLink className="h-4 w-4" />
+          <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-2.5">
+            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="text-xs text-foreground flex-1 truncate">Asset: {lead.suggestedAssetCode}</span>
+            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+              <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -171,20 +171,20 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
       {/* SCRIPTS - collapsible */}
       {scripts && scripts.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-2">
           <button 
             onClick={() => setShowScripts(!showScripts)}
-            className="flex items-center gap-1 text-xs text-muted-foreground uppercase tracking-wide mb-1 hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wide mb-1 hover:text-foreground transition-colors"
           >
             <ScrollText className="h-3 w-3" />
             Scripts prontos ({scripts.length})
             <ChevronRight className={cn('h-3 w-3 transition-transform', showScripts && 'rotate-90')} />
           </button>
           {showScripts && (
-            <div className="space-y-2 animate-fade-in">
+            <div className="space-y-1.5 animate-fade-in">
               {scripts.slice(0, 4).map(script => (
-                <div key={script.id} className="flex items-center gap-2 bg-secondary/30 rounded-lg p-2">
-                  <span className="text-xs text-foreground flex-1 truncate">{script.title}</span>
+                <div key={script.id} className="flex items-center gap-1.5 bg-secondary/30 rounded-lg p-2">
+                  <span className="text-[11px] text-foreground flex-1 truncate">{script.title}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -212,29 +212,29 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
       {/* PRÓXIMO PASSO */}
       {guidance?.nextStage && (
-        <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <ArrowRight className="h-3 w-3" />
-          <span>Após resposta → mover para <strong className="text-foreground">{ACENDER_STAGES.find(s => s.value === guidance.nextStage)?.label}</strong></span>
+        <div className="mb-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+          <ArrowRight className="h-3 w-3 flex-shrink-0" />
+          <span>Após resposta → <strong className="text-foreground">{ACENDER_STAGES.find(s => s.value === guidance.nextStage)?.label}</strong></span>
         </div>
       )}
 
       {/* AI Quick Coach Tip */}
       <QuickCoachTip lead={lead} />
 
-      {/* Action buttons */}
-      <div className="flex items-center gap-2">
-        <Button className="btn-whatsapp flex-1 gap-2" onClick={() => handleWhatsApp()}>
-          <MessageCircle className="h-5 w-5" />
+      {/* Action buttons - mobile optimized */}
+      <div className="flex items-center gap-1.5 mt-2">
+        <Button className="btn-whatsapp flex-1 gap-1.5 h-10 text-sm" onClick={() => handleWhatsApp()}>
+          <MessageCircle className="h-4 w-4" />
           WhatsApp
         </Button>
-        <Button className="btn-call" onClick={handleCall}>
-          <Phone className="h-5 w-5" />
+        <Button className="btn-call h-10 w-10 p-0" onClick={handleCall}>
+          <Phone className="h-4 w-4" />
         </Button>
-        <Button variant="secondary" className="btn-secondary" onClick={() => onMarkDone?.(lead.id)}>
-          <CheckCircle className="h-5 w-5" />
+        <Button variant="secondary" className="h-10 w-10 p-0" onClick={() => onMarkDone?.(lead.id)}>
+          <CheckCircle className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" className="btn-ghost" onClick={() => onReschedule?.(lead.id)}>
-          <Clock className="h-5 w-5" />
+        <Button variant="ghost" className="h-10 w-10 p-0" onClick={() => onReschedule?.(lead.id)}>
+          <Clock className="h-4 w-4" />
         </Button>
       </div>
     </div>
