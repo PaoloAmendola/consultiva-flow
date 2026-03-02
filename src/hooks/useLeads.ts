@@ -59,7 +59,8 @@ export function useLeads(filters?: LeadFilters) {
         query = query.eq('status_final', filters.statusFinal);
       }
       if (filters?.search) {
-        query = query.or(`name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,company.ilike.%${filters.search}%`);
+        const escaped = filters.search.replace(/[%_\\]/g, '\\$&');
+        query = query.or(`name.ilike.%${escaped}%,phone.ilike.%${escaped}%,company.ilike.%${escaped}%`);
       }
 
       const { data, error } = await query;
@@ -106,7 +107,8 @@ export function useActiveLeads(filters?: LeadFilters) {
         query = query.eq('priority', filters.priority);
       }
       if (filters?.search) {
-        query = query.or(`name.ilike.%${filters.search}%,phone.ilike.%${filters.search}%,company.ilike.%${filters.search}%`);
+        const escaped = filters.search.replace(/[%_\\]/g, '\\$&');
+        query = query.or(`name.ilike.%${escaped}%,phone.ilike.%${escaped}%,company.ilike.%${escaped}%`);
       }
 
       const { data, error } = await query;
