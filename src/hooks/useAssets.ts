@@ -24,7 +24,8 @@ export function useAssets(filters?: { type?: string; leadType?: LeadType; search
         query = query.eq('type', filters.type);
       }
       if (filters?.search) {
-        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%,code.ilike.%${filters.search}%`);
+        const escaped = filters.search.replace(/[%_\\]/g, '\\$&');
+        query = query.or(`name.ilike.%${escaped}%,description.ilike.%${escaped}%,code.ilike.%${escaped}%`);
       }
 
       const { data, error } = await query;
