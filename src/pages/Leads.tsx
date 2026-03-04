@@ -4,13 +4,22 @@ import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { ImportLeadsModal } from '@/components/leads/ImportLeadsModal';
 import { ExportLeadsButton } from '@/components/leads/ExportLeadsButton';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
+import { LeadListView } from '@/components/leads/LeadListView';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Columns3, List, AlignJustify } from 'lucide-react';
 import { useActiveLeads } from '@/hooks/useLeads';
 import { ACENDER_SALES_STAGES, LeadPriority } from '@/types/database';
 import { cn } from '@/lib/utils';
+
+type ViewMode = 'kanban' | 'list' | 'compact';
+
+const VIEW_OPTIONS: { value: ViewMode; icon: React.ElementType; label: string }[] = [
+  { value: 'kanban', icon: Columns3, label: 'Kanban' },
+  { value: 'list', icon: List, label: 'Lista' },
+  { value: 'compact', icon: AlignJustify, label: 'Compacto' },
+];
 
 const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
   { value: 'P1', label: 'P1' },
