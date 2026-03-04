@@ -4,13 +4,22 @@ import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { ImportLeadsModal } from '@/components/leads/ImportLeadsModal';
 import { ExportLeadsButton } from '@/components/leads/ExportLeadsButton';
 import { KanbanBoard } from '@/components/leads/KanbanBoard';
+import { LeadListView } from '@/components/leads/LeadListView';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Columns3, List, AlignJustify } from 'lucide-react';
 import { useActiveLeads } from '@/hooks/useLeads';
 import { ACENDER_SALES_STAGES, LeadPriority } from '@/types/database';
 import { cn } from '@/lib/utils';
+
+type ViewMode = 'kanban' | 'list' | 'compact';
+
+const VIEW_OPTIONS: { value: ViewMode; icon: React.ElementType; label: string }[] = [
+  { value: 'kanban', icon: Columns3, label: 'Kanban' },
+  { value: 'list', icon: List, label: 'Lista' },
+  { value: 'compact', icon: AlignJustify, label: 'Compacto' },
+];
 
 const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
   { value: 'P1', label: 'P1' },
@@ -28,6 +37,7 @@ const Leads = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<LeadFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const { data: leads, isLoading, error } = useActiveLeads();
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
@@ -74,8 +84,30 @@ const Leads = () => {
           </Button>
         </div>
 
-        {/* Action buttons */}
+        {/* View toggle + Action buttons */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center bg-secondary rounded-lg p-0.5 flex-shrink-0">
+            {VIEW_OPTIONS.map(opt => {
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => setViewMode(opt.value)}
+                  className={cn(
+                    'flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors',
+                    viewMode === opt.value
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                  title={opt.label}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex-1" />
           <ImportLeadsModal />
           <ExportLeadsButton />
           <CreateLeadForm />
@@ -134,13 +166,15 @@ const Leads = () => {
         )}
       </div>
 
-      {/* Kanban */}
+      {/* Pipeline View */}
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
-      ) : (
+      ) : viewMode === 'kanban' ? (
         <KanbanBoard leads={leads || []} searchQuery={searchQuery} filters={filters} />
+      ) : (
+        <LeadListView leads={leads || []} searchQuery={searchQuery} filters={filters} compact={viewMode === 'compact'} />
       )}
     </DashboardLayout>
   );
