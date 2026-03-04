@@ -166,13 +166,15 @@ const Leads = () => {
         )}
       </div>
 
-      {/* Kanban */}
+      {/* Pipeline View */}
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
         </div>
-      ) : (
+      ) : viewMode === 'kanban' ? (
         <KanbanBoard leads={leads || []} searchQuery={searchQuery} filters={filters} />
+      ) : (
+        <LeadListView leads={leads || []} searchQuery={searchQuery} filters={filters} compact={viewMode === 'compact'} />
       )}
     </DashboardLayout>
   );
