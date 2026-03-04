@@ -12,6 +12,7 @@ import Leads from "./pages/Leads";
 import LeadProfile from "./pages/LeadProfile";
 import Assets from "./pages/Assets";
 import Trilhas from "./pages/Trilhas";
+import Clientes from "./pages/Clientes";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/leads/:id" element={<ProtectedRoute><LeadProfile /></ProtectedRoute>} />
               <Route path="/assets" element={<ProtectedRoute><Assets /></ProtectedRoute>} />
               <Route path="/trilhas" element={<ProtectedRoute><Trilhas /></ProtectedRoute>} />
+              <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

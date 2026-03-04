@@ -1,13 +1,13 @@
-import { Home, Calendar, Users, Package, BookOpen } from 'lucide-react';
+import { Home, Calendar, Users, Package, UserCheck } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Agora' },
-  { href: '/proximos', icon: Calendar, label: 'Próximos' },
   { href: '/leads', icon: Users, label: 'Leads' },
+  { href: '/clientes', icon: UserCheck, label: 'Clientes' },
+  { href: '/proximos', icon: Calendar, label: 'Próximos' },
   { href: '/assets', icon: Package, label: 'Assets' },
-  { href: '/trilhas', icon: BookOpen, label: 'Trilhas' },
 ];
 
 export function BottomNav() {

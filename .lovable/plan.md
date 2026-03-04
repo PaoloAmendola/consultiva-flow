@@ -1,74 +1,67 @@
+# Sales CRM - Estado Atual e Próximos Passos
 
+## Arquitetura
 
-## Plano: Kanban Visual no Leads + Novo Módulo "Clientes"
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+- **Backend**: Lovable Cloud (Supabase) - Auth, Database, Edge Functions
+- **IA**: Lovable AI Gateway (google/gemini-3-flash-preview) via Edge Function `sales-coach`
+- **Estado**: TanStack Query para cache e sincronização
+- **Roteamento**: React Router DOM v6
 
-### Contexto
+## Módulos Implementados
 
-Atualmente a página Leads exibe uma lista linear de cards. O pedido envolve duas grandes mudanças:
+| Módulo | Status | Arquivos principais |
+|--------|--------|---------------------|
+| Autenticação | ✅ Completo | `AuthContext.tsx`, `Auth.tsx`, `ProtectedRoute.tsx` |
+| Dashboard (Agora) | ✅ Completo | `Index.tsx`, `MetricsCards.tsx` |
+| Pipeline Leads | ✅ Completo | `Leads.tsx`, `LeadProfile.tsx` |
+| Próximos 7 dias | ✅ Completo | `Proximos.tsx` |
+| Trilhas de Nutrição | ✅ Completo | `Trilhas.tsx`, `useNurtureTracks.ts` |
+| Biblioteca de Assets | ✅ Completo | `Assets.tsx`, `useAssets.ts` |
+| Gestão de Tarefas | ✅ Completo | `TaskList.tsx`, `CreateTaskModal.tsx` |
+| Motor NBA | ✅ Completo | `nba-engine.ts` |
+| Assistente IA | ✅ Completo | `SalesCoachCard.tsx`, `QuickCoachTip.tsx`, `useSalesCoach.ts` |
+| Perfil 360° do Lead | ✅ Completo | `LeadProfile.tsx` (stepper, delete, histórico) |
 
-1. **Visão Kanban** no módulo Leads com as 6 primeiras etapas ACENDER (A-C-E-N-D-E), permitindo arrastar leads entre colunas
-2. **Novo módulo "Clientes"** para leads que chegam à etapa RECORRÊNCIA, com funil de pós-venda (D+2, D+7, D+15, D+30, D+60, D+90)
+## Banco de Dados
 
-### Arquitetura
+### Tabelas
+- `leads` - Leads com pipeline, prioridade, próxima ação
+- `interactions` - Histórico de comunicações
+- `tasks` - Tarefas vinculadas a leads
+- `nurture_tracks` - Trilhas de nutrição com steps JSON
+- `assets` - Materiais de venda (PDFs, vídeos, links)
+- `profiles` - Dados extras do usuário
+- `user_roles` - Controle de acesso (admin/user)
 
-```text
-Leads (Kanban)                    Clientes (Pós-venda)
-┌───┬───┬───┬───┬───┬───┐        ┌────────────────────────┐
-│ A │ C │ E │ N │ D │ E │  ──►   │ RECORRÊNCIA sub-stages │
-│   │   │   │   │   │   │        │ D+2 │ D+7 │ D+15 │... │
-└───┴───┴───┴───┴───┴───┘        └────────────────────────┘
-     drag & drop                      status_final=CONVERTIDO
-```
+### Triggers
+- `update_lead_last_touch` - Atualiza `last_touch_at` ao registrar interação
 
-### Mudanças Detalhadas
+### RLS
+- Todas as tabelas com RLS ativo, isolamento por `user_id`
 
-#### 1. Página Leads — Visão Kanban (mobile-first)
+## Pipelines
 
-- **Substituir a lista atual** por um Kanban horizontal com scroll (sem dependência de lib de drag-and-drop — usaremos botões "Avançar/Voltar etapa" para mobile, já que drag-and-drop nativo é ruim em toque)
-- **Desktop**: colunas lado a lado com scroll horizontal. **Mobile**: tabs/pills horizontais por etapa (A, C, E, N, D, E) que filtram os leads daquela etapa; dentro de cada tab, cards compactos com botão de avançar etapa
-- Cada coluna/tab mostra: contador de leads, cor da etapa, letra
-- Ao clicar num lead, navega para LeadProfile como hoje
-- Botão "Avançar ▸" em cada card move o lead para a próxima etapa via `useUpdateLead`
-- Quando um lead em ENCERRAMENTO é avançado, ele muda `stage` para `RECORRENCIA` e `status_final` para `CONVERTIDO`, e passa a aparecer apenas na página Clientes
+### Profissional (DIRETO)
+Novo Lead → Contato Iniciado → Qualificado → Diagnóstico → Demonstração/Prova → Proposta/Condição → Fechado → Ativação → Recorrência
 
-#### 2. Nova Página "Clientes" (`/clientes`)
+### Distribuidor (CANAL)
+Prospect → Pré-Qualificação → Reunião Estratégica → Proposta Comercial → Negociação → Aprovado → Cadastro/Contrato → Onboarding → Ativação → Expansão
 
-- Exibe leads com `stage = RECORRENCIA` (ou `status_final = CONVERTIDO`)
-- Sub-etapas de pós-venda exibidas como timeline/stepper: D+2 (Suporte), D+7 (Resultado), D+15 (Satisfação), D+30 (Reposição), D+45 (Comunidade), D+60 (Depoimento), D+90 (Cross-sell)
-- Cada cliente mostra: nome, data da compra, sub-etapa atual, próxima ação
-- Rota: `/clientes` e `/clientes/:id` (reutiliza LeadProfile com contexto de pós-venda)
+## Regras NBA (Next Best Action)
 
-#### 3. Navegação
+- Ação vencida → P1
+- Novo lead sem contato 1h → WhatsApp boas-vindas
+- Proposta sem resposta 48h → Follow-up + Asset A2
+- Diagnóstico parado 48h → Enviar material A1
+- Demonstração sem retorno 24h → WhatsApp
+- Distribuidor aprovado sem pedido 7d → Ligação + B2
+- Lead sumido 72h → Reativação
 
-- Adicionar "Clientes" ao `BottomNav` (ícone `UserCheck`) e ao `DashboardSidebar`
-- Adicionar rota `/clientes` ao `App.tsx`
+## Próximos Passos
 
-#### 4. Lógica de Transição Encerramento → Recorrência
-
-- Ao avançar de ENCERRAMENTO: atualizar `stage = RECORRENCIA`, `status_final = CONVERTIDO`
-- O lead desaparece do Kanban de Leads e aparece em Clientes
-- Registrar interação `MUDANCA_ETAPA` no histórico
-
-#### 5. Filtros do Leads Kanban
-
-- Manter os filtros existentes (prioridade, busca) funcionando dentro da visão Kanban
-- Excluir leads com `stage = RECORRENCIA` da listagem de Leads (já que estarão em Clientes)
-
-### Arquivos a Criar
-
-- `src/pages/Clientes.tsx` — página de clientes com timeline pós-venda
-- `src/components/leads/KanbanBoard.tsx` — componente Kanban com tabs mobile / colunas desktop
-
-### Arquivos a Modificar
-
-- `src/App.tsx` — adicionar rota `/clientes`
-- `src/components/layout/BottomNav.tsx` — adicionar item Clientes
-- `src/components/layout/DashboardSidebar.tsx` — adicionar item Clientes
-- `src/pages/Leads.tsx` — substituir lista por KanbanBoard, filtrar `RECORRENCIA` fora
-- `src/hooks/useLeads.ts` — adicionar hook `useClientLeads` (stage=RECORRENCIA)
-- `src/types/database.ts` — adicionar constante `RECORRENCIA_SUBSTAGES` com as sub-etapas D+2..D+90
-
-### Sem Migrações de Banco
-
-Não são necessárias mudanças no schema — usaremos o campo `substatus` existente na tabela `leads` para rastrear a sub-etapa de pós-venda (D+2, D+7, etc.).
-
+- Integração WhatsApp Business API
+- Relatórios de performance e conversão
+- Importação/exportação de leads (CSV)
+- Notificações push (PWA)
+- Multi-usuário com visão de equipe
