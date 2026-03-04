@@ -37,6 +37,7 @@ const Leads = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<LeadFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const { data: leads, isLoading, error } = useActiveLeads();
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
