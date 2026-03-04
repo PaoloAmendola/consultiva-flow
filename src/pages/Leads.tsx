@@ -1,21 +1,15 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { ImportLeadsModal } from '@/components/leads/ImportLeadsModal';
 import { ExportLeadsButton } from '@/components/leads/ExportLeadsButton';
+import { KanbanBoard } from '@/components/leads/KanbanBoard';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, ChevronRight, Clock, Filter, X } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import { useActiveLeads } from '@/hooks/useLeads';
-import { 
-  ACENDER_STAGES,
-  ORIGIN_LABELS,
-  LeadPriority,
-  mapLegacyStage,
-} from '@/types/database';
+import { ACENDER_SALES_STAGES, LeadPriority } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 const PRIORITY_OPTIONS: { value: LeadPriority; label: string }[] = [
@@ -36,29 +30,7 @@ const Leads = () => {
   const [showFilters, setShowFilters] = useState(false);
   const { data: leads, isLoading, error } = useActiveLeads();
 
-  const filteredLeads = useMemo(() => {
-    if (!leads) return [];
-    
-    return leads.filter(lead => {
-      if (filters.priority && lead.priority !== filters.priority) return false;
-      if (filters.stage && mapLegacyStage(lead.stage) !== filters.stage) return false;
-      
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        lead.name.toLowerCase().includes(query) ||
-        lead.phone.includes(query) ||
-        lead.company?.toLowerCase().includes(query) ||
-        lead.tags?.some(tag => tag.toLowerCase().includes(query))
-      );
-    });
-  }, [leads, searchQuery, filters]);
-
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
-
-  const availableStages = ACENDER_STAGES;
-
-  const clearFilters = () => setFilters({});
 
   if (error) {
     return (
@@ -71,11 +43,11 @@ const Leads = () => {
   }
 
   return (
-    <DashboardLayout 
-      title="Leads" 
-      subtitle={isLoading ? 'Carregando...' : `${filteredLeads.length} de ${leads?.length || 0} leads`}
+    <DashboardLayout
+      title="Pipeline"
+      subtitle={isLoading ? 'Carregando...' : `${leads?.length || 0} leads ativos`}
     >
-      {/* Header with search, filters and new lead */}
+      {/* Header */}
       <div className="space-y-3 mb-4">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -90,7 +62,7 @@ const Leads = () => {
           <Button
             variant={showFilters ? 'default' : 'outline'}
             size="icon"
-            className="h-10 w-10 flex-shrink-0"
+            className="h-10 w-10 flex-shrink-0 relative"
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter className="h-4 w-4" />
@@ -102,21 +74,20 @@ const Leads = () => {
           </Button>
         </div>
 
-        {/* Action buttons row */}
+        {/* Action buttons */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
           <ImportLeadsModal />
           <ExportLeadsButton />
           <CreateLeadForm />
         </div>
 
-        {/* Advanced filters */}
+        {/* Filters */}
         {showFilters && (
           <div className="space-y-3 p-3 bg-secondary/50 rounded-xl animate-fade-in">
-            {/* Etapa ACENDER */}
             <div>
               <span className="text-xs text-muted-foreground mb-1.5 block">Etapa:</span>
               <div className="flex items-center gap-1.5 flex-wrap">
-                {availableStages.map(stage => (
+                {ACENDER_SALES_STAGES.map(stage => (
                   <Button
                     key={stage.value}
                     variant={filters.stage === stage.value ? 'default' : 'outline'}
@@ -133,7 +104,6 @@ const Leads = () => {
               </div>
             </div>
 
-            {/* Priority */}
             <div>
               <span className="text-xs text-muted-foreground mb-1.5 block">Prioridade:</span>
               <div className="flex items-center gap-1.5">
@@ -155,7 +125,7 @@ const Leads = () => {
             </div>
 
             {activeFilterCount > 0 && (
-              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 w-full" onClick={clearFilters}>
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 w-full" onClick={() => setFilters({})}>
                 <X className="h-3 w-3" />
                 Limpar filtros
               </Button>
@@ -164,70 +134,14 @@ const Leads = () => {
         )}
       </div>
 
-      {/* Lead list */}
-      <div className="space-y-2">
-        {isLoading ? (
-          <>
-            {[1, 2, 3, 4, 5].map(i => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
-            ))}
-          </>
-        ) : filteredLeads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-10 w-10 text-muted-foreground mb-3" />
-            <h3 className="text-base font-semibold text-foreground mb-1">
-              {searchQuery || activeFilterCount > 0 ? 'Nenhum lead encontrado' : 'Nenhum lead cadastrado'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {searchQuery || activeFilterCount > 0 ? 'Tente outro termo ou ajuste os filtros' : 'Clique em "Novo Lead" para começar'}
-            </p>
-          </div>
-        ) : (
-          filteredLeads.map(lead => {
-            const resolvedStage = mapLegacyStage(lead.stage);
-            const currentStage = ACENDER_STAGES.find(s => s.value === resolvedStage);
-            
-            return (
-              <Link
-                key={lead.id}
-                to={`/leads/${lead.id}`}
-                className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors active:scale-[0.98] touch-manipulation"
-              >
-                {/* Priority indicator */}
-                <div className={cn(
-                  'w-1.5 h-10 rounded-full flex-shrink-0',
-                  lead.priority === 'P1' && 'bg-destructive',
-                  lead.priority === 'P2' && 'bg-warning',
-                  lead.priority === 'P3' && 'bg-info',
-                  lead.priority === 'P4' && 'bg-muted',
-                )} />
-
-                {/* Lead info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-semibold text-foreground text-sm truncate">
-                      {lead.name}
-                    </span>
-                    {lead.isOverdue && (
-                      <Clock className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="secondary" className={cn('text-[10px] text-white px-1.5 py-0', currentStage?.color)}>
-                      {currentStage?.letter}·{currentStage?.label || lead.stage}
-                    </Badge>
-                    <span className="text-[10px] text-muted-foreground">
-                      {ORIGIN_LABELS[lead.origin]}
-                    </span>
-                  </div>
-                </div>
-
-                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              </Link>
-            );
-          })
-        )}
-      </div>
+      {/* Kanban */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        </div>
+      ) : (
+        <KanbanBoard leads={leads || []} searchQuery={searchQuery} filters={filters} />
+      )}
     </DashboardLayout>
   );
 };

@@ -278,6 +278,20 @@ export const STAGE_GUIDANCE: Record<string, { goal: string; instruction: string;
   },
 };
 
+// ACENDER stages excluding RECORRENCIA (for Leads Kanban)
+export const ACENDER_SALES_STAGES = ACENDER_STAGES.filter(s => s.value !== 'RECORRENCIA');
+
+// Post-sale substages for Clientes module
+export const RECORRENCIA_SUBSTAGES = [
+  { value: 'D+2', label: 'Suporte', description: 'Confirmar recebimento e tirar dúvidas', day: 2 },
+  { value: 'D+7', label: 'Resultado', description: 'Verificar primeiros resultados', day: 7 },
+  { value: 'D+15', label: 'Satisfação', description: 'Avaliar satisfação e coletar feedback', day: 15 },
+  { value: 'D+30', label: 'Reposição', description: 'Oferecer reposição de produtos', day: 30 },
+  { value: 'D+45', label: 'Comunidade', description: 'Convidar para grupo exclusivo', day: 45 },
+  { value: 'D+60', label: 'Depoimento', description: 'Solicitar depoimento e avaliação', day: 60 },
+  { value: 'D+90', label: 'Cross-sell', description: 'Apresentar novos produtos e upgrades', day: 90 },
+] as const;
+
 export const ACTION_TYPE_CONFIG: Record<ActionType, { label: string; icon: string }> = {
   WHATSAPP: { label: 'WhatsApp', icon: 'MessageCircle' },
   LIGACAO: { label: 'Ligação', icon: 'Phone' },

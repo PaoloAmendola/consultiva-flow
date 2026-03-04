@@ -259,6 +259,34 @@ export function useUpdateLead() {
   });
 }
 
+export function useClientLeads() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['leads', 'clients', user?.id],
+    queryFn: async (): Promise<EnrichedLead[]> => {
+      if (!user) return [];
+
+      const client = getSupabaseClient();
+      const { data, error } = await client
+        .from('leads')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status_final', 'CONVERTIDO')
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching client leads:', error);
+        throw error;
+      }
+
+      const enrichedLeads = (data || []).map((lead: DbLead) => enrichLeadWithNBA(lead));
+      return enrichedLeads;
+    },
+    enabled: !!user,
+  });
+}
+
 export function useDeleteLead() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

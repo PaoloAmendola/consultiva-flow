@@ -1,6 +1,7 @@
 import { 
   LayoutDashboard, 
   Users, 
+  UserCheck,
   CalendarDays, 
   FileText, 
   Route,
@@ -29,6 +30,7 @@ const mainItems = [
   { title: 'Agora', url: '/', icon: LayoutDashboard },
   { title: 'Próximos 7 dias', url: '/proximos', icon: CalendarDays },
   { title: 'Leads', url: '/leads', icon: Users },
+  { title: 'Clientes', url: '/clientes', icon: UserCheck },
 ];
 
 const resourceItems = [
