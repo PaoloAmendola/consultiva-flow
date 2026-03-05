@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ interface KanbanBoardProps {
 export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState(ACENDER_SALES_STAGES[0].value);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const dragLeadRef = useRef<EnrichedLead | null>(null);
   const updateLead = useUpdateLead();
   const createStageChange = useCreateStageChangeInteraction();
 
@@ -34,9 +36,8 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
 
     leads.forEach(lead => {
       const resolved = mapLegacyStage(lead.stage);
-      if (resolved === 'RECORRENCIA') return; // skip clients
+      if (resolved === 'RECORRENCIA') return;
 
-      // Apply filters
       if (filters.priority && lead.priority !== filters.priority) return;
       if (filters.stage && resolved !== filters.stage) return;
       if (searchQuery) {
@@ -51,13 +52,44 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
       if (groups[resolved]) {
         groups[resolved].push(lead);
       } else {
-        // fallback to ATRACAO
         groups['ATRACAO'].push(lead);
       }
     });
 
     return groups;
   }, [leads, searchQuery, filters]);
+
+  const moveLeadToStage = useCallback(async (lead: EnrichedLead, targetStageValue: string) => {
+    const currentResolved = mapLegacyStage(lead.stage);
+    if (currentResolved === targetStageValue) return;
+
+    const isConversion = targetStageValue === 'RECORRENCIA';
+
+    try {
+      await updateLead.mutateAsync({
+        id: lead.id,
+        data: {
+          stage: targetStageValue,
+          ...(isConversion ? { status_final: 'CONVERTIDO' as const, substatus: 'D+2' } : {}),
+        },
+      });
+
+      await createStageChange.mutateAsync({
+        leadId: lead.id,
+        fromStage: currentResolved,
+        toStage: targetStageValue,
+      });
+
+      if (isConversion) {
+        toast.success(`${lead.name} convertido para Cliente! 🎉`);
+      } else {
+        const targetLabel = ACENDER_STAGES.find(s => s.value === targetStageValue)?.label;
+        toast.success(`${lead.name} movido para ${targetLabel}`);
+      }
+    } catch {
+      // errors handled by hooks
+    }
+  }, [updateLead, createStageChange]);
 
   const handleAdvance = async (lead: EnrichedLead, e: React.MouseEvent) => {
     e.preventDefault();
@@ -70,32 +102,47 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
     const nextStage = ACENDER_STAGES[currentIdx + 1];
     if (!nextStage) return;
 
-    const isConversion = nextStage.value === 'RECORRENCIA';
-
-    try {
-      await updateLead.mutateAsync({
-        id: lead.id,
-        data: {
-          stage: nextStage.value,
-          ...(isConversion ? { status_final: 'CONVERTIDO' as const, substatus: 'D+2' } : {}),
-        },
-      });
-
-      await createStageChange.mutateAsync({
-        leadId: lead.id,
-        fromStage: currentResolved,
-        toStage: nextStage.value,
-      });
-
-      if (isConversion) {
-        toast.success(`${lead.name} convertido para Cliente! 🎉`);
-      }
-    } catch {
-      // errors handled by hooks
-    }
+    await moveLeadToStage(lead, nextStage.value);
   };
 
-  const renderLeadCard = (lead: EnrichedLead) => {
+  // Drag handlers
+  const handleDragStart = useCallback((e: React.DragEvent, lead: EnrichedLead) => {
+    dragLeadRef.current = lead;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', lead.id);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    dragLeadRef.current = null;
+    setDragOverStage(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, stageValue: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverStage(stageValue);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverStage(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetStageValue: string) => {
+    e.preventDefault();
+    setDragOverStage(null);
+    const lead = dragLeadRef.current;
+    if (!lead) return;
+    dragLeadRef.current = null;
+    moveLeadToStage(lead, targetStageValue);
+  }, [moveLeadToStage]);
+
+  const renderLeadCard = (lead: EnrichedLead, draggable = false) => {
     const resolvedStage = mapLegacyStage(lead.stage);
     const currentStage = ACENDER_STAGES.find(s => s.value === resolvedStage);
     const currentIdx = ACENDER_STAGES.findIndex(s => s.value === resolvedStage);
@@ -107,7 +154,13 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
       <Link
         key={lead.id}
         to={`/leads/${lead.id}`}
-        className="flex items-center gap-2 p-3 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors active:scale-[0.98] touch-manipulation"
+        draggable={draggable}
+        onDragStart={draggable ? (e) => handleDragStart(e, lead) : undefined}
+        onDragEnd={draggable ? handleDragEnd : undefined}
+        className={cn(
+          'flex items-center gap-2 p-3 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors active:scale-[0.98] touch-manipulation',
+          draggable && 'cursor-grab active:cursor-grabbing'
+        )}
       >
         <div className={cn(
           'w-1 h-10 rounded-full flex-shrink-0',
@@ -159,7 +212,6 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
 
     return (
       <div className="space-y-3">
-        {/* Stage pills */}
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
           {ACENDER_SALES_STAGES.map(stage => {
             const count = groupedLeads[stage.value]?.length || 0;
@@ -187,28 +239,27 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
           })}
         </div>
 
-        {/* Lead cards */}
         <div className="space-y-2">
           {activeLeads.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Nenhum lead nesta etapa
             </div>
           ) : (
-            activeLeads.map(renderLeadCard)
+            activeLeads.map(lead => renderLeadCard(lead, false))
           )}
         </div>
       </div>
     );
   }
 
-  // DESKTOP: horizontal columns
+  // DESKTOP: horizontal columns with drag-and-drop
   return (
     <div className="flex gap-3 overflow-x-auto pb-4 min-h-[60vh]">
       {ACENDER_SALES_STAGES.map(stage => {
         const stageLeads = groupedLeads[stage.value] || [];
+        const isOver = dragOverStage === stage.value;
         return (
           <div key={stage.value} className="flex-shrink-0 w-64">
-            {/* Column header */}
             <div className={cn('flex items-center gap-2 px-3 py-2 rounded-t-xl', stage.color)}>
               <span className="text-white font-bold text-sm">{stage.letter}</span>
               <span className="text-white/90 text-xs font-medium">{stage.label}</span>
@@ -217,12 +268,24 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
               </span>
             </div>
 
-            {/* Column body */}
-            <div className="bg-secondary/30 rounded-b-xl p-2 space-y-2 min-h-[200px]">
+            <div
+              className={cn(
+                'bg-secondary/30 rounded-b-xl p-2 space-y-2 min-h-[200px] transition-colors',
+                isOver && 'bg-primary/10 ring-2 ring-primary/40 ring-inset'
+              )}
+              onDragOver={(e) => handleDragOver(e, stage.value)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage.value)}
+            >
               {stageLeads.length === 0 ? (
-                <div className="text-center py-6 text-xs text-muted-foreground">Vazio</div>
+                <div className={cn(
+                  'text-center py-6 text-xs text-muted-foreground',
+                  isOver && 'text-primary font-medium'
+                )}>
+                  {isOver ? 'Soltar aqui' : 'Vazio'}
+                </div>
               ) : (
-                stageLeads.map(renderLeadCard)
+                stageLeads.map(lead => renderLeadCard(lead, true))
               )}
             </div>
           </div>
