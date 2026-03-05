@@ -32,7 +32,7 @@ export function calculateNBA(lead: DbLead, assets?: DbAsset[]): NBAResult {
     priority: lead.priority,
     isOverdue,
     stageInstruction: guidance?.instruction,
-    nextStageName: guidance?.nextStage ? STAGE_GUIDANCE[guidance.nextStage]?.goal : undefined,
+    nextStageName: guidance?.nextStageName || (guidance?.nextStage ? STAGE_GUIDANCE[guidance.nextStage]?.goal : undefined),
   };
 
   // P1: Overdue action
