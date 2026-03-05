@@ -240,41 +240,109 @@ export const PROFISSIONAL_STAGES = ACENDER_STAGES;
 export const DISTRIBUIDOR_STAGES = ACENDER_STAGES;
 
 // Stage guidance: what to do at each stage
-export const STAGE_GUIDANCE: Record<string, { goal: string; instruction: string; nextStage: string | null }> = {
+export interface StageGuidanceItem {
+  goal: string;
+  instruction: string;
+  nextStage: string | null;
+  nextStageName: string;
+  whatToSend: string[];
+  objections: string[];
+  scripts: string[];
+  nextStepAction: string;
+}
+
+export const STAGE_GUIDANCE: Record<string, StageGuidanceItem> = {
   ATRACAO: {
     goal: 'Gerar interesse qualificado',
-    instruction: 'Envie a primeira mensagem personalizada e pergunte sobre o trabalho do lead',
+    instruction: 'Envie a primeira mensagem personalizada em até 1h. Pergunte sobre o trabalho e demonstre que conhece o segmento.',
     nextStage: 'CONEXAO',
+    nextStageName: 'Conexão',
+    whatToSend: ['Catálogo digital de produtos', 'Vídeo institucional curto (30s)'],
+    objections: ['"Não tenho interesse"', '"Já uso outra marca"', '"Me manda por email"'],
+    scripts: [
+      'Oi {nome}! Vi que você se interessou pelos nossos produtos profissionais. Posso te mostrar como nossa linha pode transformar seus resultados? 💇‍♀️',
+      'Oi {nome}! Sou da [empresa], trabalho com produtos profissionais pra salão. Posso te mandar um catálogo rápido?',
+    ],
+    nextStepAction: 'Obter resposta do lead e avançar para Conexão',
   },
   CONEXAO: {
-    goal: 'Criar confiança imediata',
-    instruction: 'Faça perguntas leves sobre tipo de cabelo e rotina no salão',
+    goal: 'Criar confiança e rapport',
+    instruction: 'Faça perguntas leves sobre o dia a dia do salão. Descubra tipos de cabelo que mais atende, volume de clientes e marca atual.',
     nextStage: 'ENQUADRAMENTO',
+    nextStageName: 'Enquadramento',
+    whatToSend: ['Depoimentos de outros profissionais', 'Cases de sucesso rápidos'],
+    objections: ['"Não tenho tempo agora"', '"Pode falar mais tarde?"', '"Estou satisfeito com meu fornecedor"'],
+    scripts: [
+      'Oi {nome}! Quero entender melhor sua rotina pra te recomendar exatamente o que vai funcionar pra você. Que tipo de cabelo você mais atende? 💁‍♀️',
+      '{nome}, conta pra mim: qual o maior desafio que você enfrenta hoje no salão com os produtos que usa?',
+    ],
+    nextStepAction: 'Coletar informações básicas e avançar para Enquadramento',
   },
   ENQUADRAMENTO: {
-    goal: 'Qualificar lead (A/B/C)',
-    instruction: 'Aplique as 5 perguntas de qualificação: dor, volume, experiência, tipo de cabelo, prioridade',
+    goal: 'Qualificar o lead (A/B/C)',
+    instruction: 'Aplique as 5 perguntas de qualificação: 1) Qual a dor principal? 2) Volume mensal de clientes? 3) Experiência com a categoria? 4) Tipo de cabelo predominante? 5) O que é prioridade agora?',
     nextStage: 'NUTRICAO',
+    nextStageName: 'Nutrição',
+    whatToSend: ['Formulário de diagnóstico', 'Checklist de necessidades'],
+    objections: ['"São muitas perguntas"', '"Só quero saber o preço"', '"Não sei se vale a pena mudar"'],
+    scripts: [
+      'Oi {nome}! Quero te fazer algumas perguntas rápidas pra personalizar a indicação. Qual a maior dificuldade com os produtos que usa hoje?',
+      '{nome}, pra montar a melhor recomendação, preciso saber: quantos clientes você atende por semana em média?',
+    ],
+    nextStepAction: 'Classificar perfil do lead e iniciar nutrição com materiais educativos',
   },
   NUTRICAO: {
-    goal: 'Educar tecnicamente',
-    instruction: 'Envie os materiais educativos na sequência: Catálogo → Vídeo → Comparativo → ROI → Antes/Depois',
+    goal: 'Educar tecnicamente e gerar desejo',
+    instruction: 'Envie materiais educativos na sequência: Catálogo → Vídeo técnico → Comparativo → ROI → Antes/Depois. Espaçar envios a cada 2-3 dias.',
     nextStage: 'DEMONSTRACAO',
+    nextStageName: 'Demonstração',
+    whatToSend: ['Catálogo completo da linha', 'Vídeo de aplicação', 'Comparativo técnico', 'Calculadora de ROI', 'Fotos antes/depois'],
+    objections: ['"Vou pensar"', '"Preciso conversar com meu sócio"', '"Esse produto funciona mesmo?"'],
+    scripts: [
+      'Oi {nome}! Preparei um material especial baseado no que conversamos. Dá uma olhada e me fala o que achou! 📄',
+      '{nome}, olha esse resultado real de uma profissional que começou a usar nossa linha mês passado 👀',
+    ],
+    nextStepAction: 'Confirmar interesse e agendar demonstração ou enviar proposta',
   },
   DEMONSTRACAO: {
-    goal: 'Personalizar solução',
-    instruction: 'Monte a proposta personalizada com kit adequado, ROI calculado e garantia',
+    goal: 'Personalizar a solução e apresentar proposta',
+    instruction: 'Monte a proposta personalizada com: kit adequado ao perfil, cálculo de ROI, condições de pagamento e garantia. Apresente benefícios específicos para o perfil do lead.',
     nextStage: 'ENCERRAMENTO',
+    nextStageName: 'Encerramento',
+    whatToSend: ['Proposta comercial personalizada', 'Tabela de preços', 'Condições especiais', 'Vídeo demonstrativo do produto'],
+    objections: ['"Tá caro"', '"Preciso de desconto"', '"Vou comparar com outros fornecedores"', '"Não tenho verba agora"'],
+    scripts: [
+      'Oi {nome}! Montei uma proposta personalizada com o kit ideal pra sua realidade. Posso te mandar os detalhes? 🎯',
+      '{nome}, com base no que conversamos, separei um kit que vai resolver [dor específica]. Quer ver os detalhes e valores?',
+    ],
+    nextStepAction: 'Confirmar pedido e coletar dados para faturamento',
   },
   ENCERRAMENTO: {
-    goal: 'Fechar venda',
-    instruction: 'Aplique o fechamento direto, confirme pedido e colete dados de pagamento',
+    goal: 'Finalizar pedido e garantir entrega',
+    instruction: 'O cliente já fechou o pedido! Agora colete: dados de entrega (endereço completo), confirme forma de pagamento, envie código de rastreio quando disponível e alinhe prazo de entrega.',
     nextStage: 'RECORRENCIA',
+    nextStageName: 'Recorrência (Cliente)',
+    whatToSend: ['Confirmação do pedido', 'Código de rastreio', 'Guia de primeiros passos', 'Manual de uso dos produtos'],
+    objections: ['"Quando chega?"', '"Posso alterar o endereço?"', '"Quero adicionar mais um item"', '"O frete tá caro"'],
+    scripts: [
+      'Oi {nome}! Pedido confirmado! 🎉 Preciso do endereço completo pra envio. Pode me passar?',
+      '{nome}, seu pedido já foi despachado! Aqui está o código de rastreio: [código]. Qualquer dúvida, me chama! 📦',
+      '{nome}, seu pedido chega em [X dias]. Enquanto isso, preparei um guia rápido de como usar os produtos pra ter o melhor resultado! 📋',
+    ],
+    nextStepAction: 'Confirmar entrega e iniciar acompanhamento pós-venda (D+2)',
   },
   RECORRENCIA: {
-    goal: 'Pós-venda (D+2 até D+90)',
-    instruction: 'Acompanhe resultados, colete depoimentos e ofereça reposição',
+    goal: 'Pós-venda e fidelização (D+2 até D+90)',
+    instruction: 'Acompanhe resultados, colete depoimentos e ofereça reposição. Siga a timeline: D+2 Suporte → D+7 Resultado → D+15 Satisfação → D+30 Reposição → D+60 Depoimento → D+90 Cross-sell.',
     nextStage: null,
+    nextStageName: '',
+    whatToSend: ['Dicas de uso avançado', 'Convite para grupo exclusivo', 'Ofertas de reposição', 'Novos lançamentos'],
+    objections: ['"Ainda não usei tudo"', '"Não preciso repor agora"', '"Quero experimentar outra marca"'],
+    scripts: [
+      'Oi {nome}! Tudo bem? Já faz um tempinho desde nosso último contato. Pode ser hora de repor o estoque — quer que eu prepare um pedido? 🔄',
+      '{nome}, como estão os resultados com os produtos? Quero saber se posso te ajudar com alguma dúvida! 💬',
+    ],
+    nextStepAction: 'Manter relacionamento ativo e estimular recompra',
   },
 };
 

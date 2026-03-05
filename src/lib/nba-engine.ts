@@ -32,7 +32,7 @@ export function calculateNBA(lead: DbLead, assets?: DbAsset[]): NBAResult {
     priority: lead.priority,
     isOverdue,
     stageInstruction: guidance?.instruction,
-    nextStageName: guidance?.nextStage ? STAGE_GUIDANCE[guidance.nextStage]?.goal : undefined,
+    nextStageName: guidance?.nextStageName || (guidance?.nextStage ? STAGE_GUIDANCE[guidance.nextStage]?.goal : undefined),
   };
 
   // P1: Overdue action
@@ -107,11 +107,11 @@ export function calculateNBA(lead: DbLead, assets?: DbAsset[]): NBAResult {
       break;
 
     case 'ENCERRAMENTO':
-      if (hoursSinceLastTouch > 48) {
-        result.suggestedAction = 'FOLLOW_UP';
-        result.suggestedMessage = `Oi {nome}! Conseguiu analisar a proposta? Posso esclarecer qualquer dúvida. Temos uma condição especial essa semana! ⏰`;
+      if (hoursSinceLastTouch > 24) {
+        result.suggestedAction = 'WHATSAPP';
+        result.suggestedMessage = `Oi {nome}! Seu pedido já foi processado! Preciso confirmar o endereço de entrega e te enviar o código de rastreio. Pode me chamar? 📦`;
         if (!result.overdueReason) {
-          result.overdueReason = 'Proposta sem resposta há 48h';
+          result.overdueReason = 'Pedido fechado — aguardando dados de entrega';
           result.priority = 'P1';
         }
       }
