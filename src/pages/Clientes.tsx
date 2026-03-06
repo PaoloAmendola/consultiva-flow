@@ -204,6 +204,11 @@ const Clientes = () => {
       title="Clientes"
       subtitle={isLoading ? 'Carregando...' : `${filteredClients.length} clientes em acompanhamento`}
     >
+      {/* Dashboard metrics */}
+      {!isLoading && clients && clients.length > 0 && (
+        <ClientesDashboard clients={clients} />
+      )}
+
       {/* Search */}
       <div className="space-y-3 mb-4">
         <div className="relative">
