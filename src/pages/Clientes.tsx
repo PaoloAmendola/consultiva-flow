@@ -20,6 +20,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ClientesDashboard } from '@/components/clientes/ClientesDashboard';
+import { useClientNotifications } from '@/hooks/useClientNotifications';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
