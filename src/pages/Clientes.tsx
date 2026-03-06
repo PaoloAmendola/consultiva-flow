@@ -20,6 +20,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ClientesDashboard } from '@/components/clientes/ClientesDashboard';
+import { useClientNotifications } from '@/hooks/useClientNotifications';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
@@ -116,6 +118,7 @@ const Clientes = () => {
   const isMobile = useIsMobile();
   const { data: clients, isLoading, error } = useClientLeads();
   const updateLead = useUpdateLead();
+  useClientNotifications(clients);
 
   const filteredClients = useMemo(() => {
     if (!clients) return [];
@@ -201,6 +204,11 @@ const Clientes = () => {
       title="Clientes"
       subtitle={isLoading ? 'Carregando...' : `${filteredClients.length} clientes em acompanhamento`}
     >
+      {/* Dashboard metrics */}
+      {!isLoading && clients && clients.length > 0 && (
+        <ClientesDashboard clients={clients} />
+      )}
+
       {/* Search */}
       <div className="space-y-3 mb-4">
         <div className="relative">
