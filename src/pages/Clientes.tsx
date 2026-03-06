@@ -118,6 +118,7 @@ const Clientes = () => {
   const isMobile = useIsMobile();
   const { data: clients, isLoading, error } = useClientLeads();
   const updateLead = useUpdateLead();
+  useClientNotifications(clients);
 
   const filteredClients = useMemo(() => {
     if (!clients) return [];
