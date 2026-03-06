@@ -56,6 +56,50 @@ export type Database = {
         }
         Relationships: []
       }
+      client_orders: {
+        Row: {
+          created_at: string
+          id: string
+          items: string
+          lead_id: string
+          notes: string | null
+          order_date: string
+          total_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: string
+          lead_id: string
+          notes?: string | null
+          order_date?: string
+          total_value?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: string
+          lead_id?: string
+          notes?: string | null
+          order_date?: string
+          total_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_orders_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interactions: {
         Row: {
           asset_sent: string | null

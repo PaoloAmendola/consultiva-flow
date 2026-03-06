@@ -22,6 +22,7 @@ import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ClientesDashboard } from '@/components/clientes/ClientesDashboard';
 import { useClientNotifications } from '@/hooks/useClientNotifications';
+import { OrdersPanel } from '@/components/clientes/OrdersPanel';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
@@ -460,6 +461,9 @@ const Clientes = () => {
                         💡 <span className="font-medium">Dica:</span> {guidance.tips}
                       </p>
                     </div>
+
+                    {/* Orders panel */}
+                    <OrdersPanel leadId={client.id} clientName={client.name} />
 
                     {/* Quick link to full profile */}
                     <Link

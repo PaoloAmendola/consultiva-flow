@@ -44,6 +44,7 @@ import { CreateTaskModal } from '@/components/tasks/CreateTaskModal';
 import { TaskList } from '@/components/tasks/TaskList';
 import { SalesCoachCard } from '@/components/leads/SalesCoachCard';
 import { PipelineStepper } from '@/components/leads/PipelineStepper';
+import { StageGuidePanel } from '@/components/leads/StageGuidePanel';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -370,6 +371,9 @@ const LeadProfile = () => {
 
         {/* Sidebar */}
         <div className="space-y-4">
+          {/* Stage Guide with scripts, materials, objections */}
+          <StageGuidePanel lead={lead} />
+
           {/* AI Sales Coach */}
           <SalesCoachCard lead={lead} />
 
