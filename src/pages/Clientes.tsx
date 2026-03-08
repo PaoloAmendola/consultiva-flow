@@ -24,6 +24,7 @@ import { ClientesDashboard } from '@/components/clientes/ClientesDashboard';
 import { useClientNotifications } from '@/hooks/useClientNotifications';
 import { OrdersPanel } from '@/components/clientes/OrdersPanel';
 import { SubstageFunnelChart } from '@/components/clientes/SubstageFunnelChart';
+import { OrdersEvolutionChart } from '@/components/clientes/OrdersEvolutionChart';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
