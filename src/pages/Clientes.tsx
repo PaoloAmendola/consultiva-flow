@@ -208,7 +208,10 @@ const Clientes = () => {
     >
       {/* Dashboard metrics */}
       {!isLoading && clients && clients.length > 0 && (
-        <ClientesDashboard clients={clients} />
+        <>
+          <ClientesDashboard clients={clients} />
+          <SubstageFunnelChart clients={clients} />
+        </>
       )}
 
       {/* Search */}
