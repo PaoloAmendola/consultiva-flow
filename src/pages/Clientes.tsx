@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { ClientesDashboard } from '@/components/clientes/ClientesDashboard';
 import { useClientNotifications } from '@/hooks/useClientNotifications';
 import { OrdersPanel } from '@/components/clientes/OrdersPanel';
+import { SubstageFunnelChart } from '@/components/clientes/SubstageFunnelChart';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
@@ -207,7 +208,10 @@ const Clientes = () => {
     >
       {/* Dashboard metrics */}
       {!isLoading && clients && clients.length > 0 && (
-        <ClientesDashboard clients={clients} />
+        <>
+          <ClientesDashboard clients={clients} />
+          <SubstageFunnelChart clients={clients} />
+        </>
       )}
 
       {/* Search */}
