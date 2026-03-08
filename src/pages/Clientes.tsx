@@ -318,6 +318,18 @@ const Clientes = () => {
                 'rounded-xl bg-card border overflow-hidden transition-colors',
                 isChurnRisk ? 'border-destructive/60 ring-1 ring-destructive/20' : isStale ? 'border-warning/40' : 'border-border'
               )}>
+                {/* Churn alert */}
+                {(isChurnRisk || isStale) && (
+                  <div className={cn(
+                    'px-3 py-1.5 flex items-center gap-1.5 text-[10px] font-medium',
+                    isChurnRisk ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                  )}>
+                    <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                    {isChurnRisk
+                      ? `⚠ Risco de churn — parado há ${daysSinceUpdate}d em ${currentSub?.value}`
+                      : `Sem avanço há ${daysSinceUpdate} dias`}
+                  </div>
+                )}
                 {/* Main card row */}
                 <div className="p-3">
                   <div className="flex items-center gap-2 mb-2">
