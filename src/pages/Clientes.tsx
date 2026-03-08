@@ -305,9 +305,15 @@ const Clientes = () => {
             const guidance = SUBSTAGE_GUIDANCE[currentSub?.value || 'D+2'];
             const daysSince = getDaysSinceConversion(client.updated_at);
             const GuidanceIcon = guidance?.icon || Circle;
+            const daysSinceUpdate = differenceInDays(new Date(), new Date(client.updated_at));
+            const isChurnRisk = daysSinceUpdate > 14 && currentSubIdx <= 1;
+            const isStale = daysSinceUpdate > 14 && !isChurnRisk;
 
             return (
-              <div key={client.id} className="rounded-xl bg-card border border-border overflow-hidden">
+              <div key={client.id} className={cn(
+                'rounded-xl bg-card border overflow-hidden transition-colors',
+                isChurnRisk ? 'border-destructive/60 ring-1 ring-destructive/20' : isStale ? 'border-warning/40' : 'border-border'
+              )}>
                 {/* Main card row */}
                 <div className="p-3">
                   <div className="flex items-center gap-2 mb-2">
