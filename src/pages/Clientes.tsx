@@ -24,6 +24,7 @@ import { ClientesDashboard } from '@/components/clientes/ClientesDashboard';
 import { useClientNotifications } from '@/hooks/useClientNotifications';
 import { OrdersPanel } from '@/components/clientes/OrdersPanel';
 import { SubstageFunnelChart } from '@/components/clientes/SubstageFunnelChart';
+import { OrdersEvolutionChart } from '@/components/clientes/OrdersEvolutionChart';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
@@ -210,7 +211,10 @@ const Clientes = () => {
       {!isLoading && clients && clients.length > 0 && (
         <>
           <ClientesDashboard clients={clients} />
-          <SubstageFunnelChart clients={clients} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <SubstageFunnelChart clients={clients} />
+            <OrdersEvolutionChart />
+          </div>
         </>
       )}
 
@@ -305,9 +309,27 @@ const Clientes = () => {
             const guidance = SUBSTAGE_GUIDANCE[currentSub?.value || 'D+2'];
             const daysSince = getDaysSinceConversion(client.updated_at);
             const GuidanceIcon = guidance?.icon || Circle;
+            const daysSinceUpdate = differenceInDays(new Date(), new Date(client.updated_at));
+            const isChurnRisk = daysSinceUpdate > 14 && currentSubIdx <= 1;
+            const isStale = daysSinceUpdate > 14 && !isChurnRisk;
 
             return (
-              <div key={client.id} className="rounded-xl bg-card border border-border overflow-hidden">
+              <div key={client.id} className={cn(
+                'rounded-xl bg-card border overflow-hidden transition-colors',
+                isChurnRisk ? 'border-destructive/60 ring-1 ring-destructive/20' : isStale ? 'border-warning/40' : 'border-border'
+              )}>
+                {/* Churn alert */}
+                {(isChurnRisk || isStale) && (
+                  <div className={cn(
+                    'px-3 py-1.5 flex items-center gap-1.5 text-[10px] font-medium',
+                    isChurnRisk ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                  )}>
+                    <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                    {isChurnRisk
+                      ? `⚠ Risco de churn — parado há ${daysSinceUpdate}d em ${currentSub?.value}`
+                      : `Sem avanço há ${daysSinceUpdate} dias`}
+                  </div>
+                )}
                 {/* Main card row */}
                 <div className="p-3">
                   <div className="flex items-center gap-2 mb-2">
