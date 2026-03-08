@@ -211,7 +211,10 @@ const Clientes = () => {
       {!isLoading && clients && clients.length > 0 && (
         <>
           <ClientesDashboard clients={clients} />
-          <SubstageFunnelChart clients={clients} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <SubstageFunnelChart clients={clients} />
+            <OrdersEvolutionChart />
+          </div>
         </>
       )}
 
