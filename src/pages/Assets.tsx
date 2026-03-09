@@ -80,18 +80,18 @@ const Assets = () => {
     >
       {/* Search, filters, and create button */}
       <div className="space-y-3 mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome, código ou tag..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-10 bg-secondary"
+              className="pl-10 bg-secondary h-10"
             />
           </div>
-          <Button onClick={openCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Asset
+          <Button onClick={openCreate} className="gap-1.5 flex-shrink-0 h-10">
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Novo Asset</span>
           </Button>
         </div>
         
