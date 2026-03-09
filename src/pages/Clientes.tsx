@@ -188,8 +188,8 @@ const Clientes = () => {
     setExpandedClient(expandedClient === id ? null : id);
   };
 
-  const getDaysSinceConversion = (updatedAt: string) => {
-    return differenceInDays(new Date(), new Date(updatedAt));
+  const getDaysSinceConversion = (createdAt: string) => {
+    return differenceInDays(new Date(), new Date(createdAt));
   };
 
   if (error) {
@@ -307,7 +307,7 @@ const Clientes = () => {
             const canAdvance = currentSubIdx < RECORRENCIA_SUBSTAGES.length - 1;
             const isExpanded = expandedClient === client.id;
             const guidance = SUBSTAGE_GUIDANCE[currentSub?.value || 'D+2'];
-            const daysSince = getDaysSinceConversion(client.updated_at);
+            const daysSince = getDaysSinceConversion(client.created_at);
             const GuidanceIcon = guidance?.icon || Circle;
             const daysSinceUpdate = differenceInDays(new Date(), new Date(client.updated_at));
             const isChurnRisk = daysSinceUpdate > 14 && currentSubIdx <= 1;

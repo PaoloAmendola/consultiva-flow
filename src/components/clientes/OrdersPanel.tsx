@@ -107,11 +107,11 @@ export function OrdersPanel({ leadId, clientName }: OrdersPanelProps) {
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="font-bold text-primary">R$ {Number(order.total_value).toFixed(2)}</span>
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(order)}>
                       <Pencil className="h-2.5 w-2.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => deleteOrder.mutate(order.id)}>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => { if (confirm('Remover este pedido?')) deleteOrder.mutate(order.id); }}>
                       <Trash2 className="h-2.5 w-2.5" />
                     </Button>
                   </div>
