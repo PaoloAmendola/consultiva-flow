@@ -52,3 +52,36 @@ export function useCreateClientOrder() {
     onError: () => toast.error('Erro ao registrar pedido'),
   });
 }
+
+export function useUpdateClientOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; total_value?: number; items?: string; notes?: string | null }) => {
+      const client = getClient();
+      const { data, error } = await client.from('client_orders').update(updates).eq('id', id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client_orders'] });
+      toast.success('Pedido atualizado!');
+    },
+    onError: () => toast.error('Erro ao atualizar pedido'),
+  });
+}
+
+export function useDeleteClientOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const client = getClient();
+      const { error } = await client.from('client_orders').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client_orders'] });
+      toast.success('Pedido removido!');
+    },
+    onError: () => toast.error('Erro ao remover pedido'),
+  });
+}

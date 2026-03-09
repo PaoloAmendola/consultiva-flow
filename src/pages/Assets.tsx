@@ -143,8 +143,8 @@ const Assets = () => {
                       </div>
                       <h3 className="font-semibold text-foreground text-sm leading-tight">{asset.name}</h3>
                     </div>
-                    {/* Edit/Delete */}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Edit/Delete - always visible on mobile */}
+                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(asset)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
