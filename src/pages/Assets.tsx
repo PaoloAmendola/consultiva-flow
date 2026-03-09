@@ -80,41 +80,41 @@ const Assets = () => {
     >
       {/* Search, filters, and create button */}
       <div className="space-y-3 mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome, código ou tag..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-10 bg-secondary"
+              className="pl-10 bg-secondary h-10"
             />
           </div>
-          <Button onClick={openCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Asset
+          <Button onClick={openCreate} className="gap-1.5 flex-shrink-0 h-10">
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Novo Asset</span>
           </Button>
         </div>
         
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(null)}>Todos</Button>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" className="flex-shrink-0" onClick={() => setTypeFilter(null)}>Todos</Button>
           {assetTypes.map(type => {
             const config = ASSET_TYPE_CONFIG[type];
             const Icon = config?.icon || FileText;
             return (
-              <Button key={type} variant={typeFilter === type ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(type)} className="gap-1.5">
+              <Button key={type} variant={typeFilter === type ? 'default' : 'outline'} size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setTypeFilter(type)}>
                 <Icon className="h-3.5 w-3.5" />{type}
               </Button>
             );
           })}
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button variant={audienceFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" onClick={() => setAudienceFilter(audienceFilter === 'PROFISSIONAL' ? null : 'PROFISSIONAL')} className="gap-1">👤 Profissional</Button>
-          <Button variant={audienceFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" onClick={() => setAudienceFilter(audienceFilter === 'DISTRIBUIDOR' ? null : 'DISTRIBUIDOR')} className="gap-1">🏢 Distribuidor</Button>
+          <div className="w-px h-6 bg-border mx-1 flex-shrink-0" />
+          <Button variant={audienceFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" className="gap-1 flex-shrink-0" onClick={() => setAudienceFilter(audienceFilter === 'PROFISSIONAL' ? null : 'PROFISSIONAL')}>👤 Prof.</Button>
+          <Button variant={audienceFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" className="gap-1 flex-shrink-0" onClick={() => setAudienceFilter(audienceFilter === 'DISTRIBUIDOR' ? null : 'DISTRIBUIDOR')}>🏢 Distrib.</Button>
         </div>
       </div>
 
       {/* Asset grid */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
         </div>
       ) : filteredAssets.length === 0 ? (
@@ -126,7 +126,7 @@ const Assets = () => {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredAssets.map(asset => {
             const config = ASSET_TYPE_CONFIG[asset.type] || ASSET_TYPE_CONFIG.PDF;
             const Icon = config.icon;
@@ -143,8 +143,8 @@ const Assets = () => {
                       </div>
                       <h3 className="font-semibold text-foreground text-sm leading-tight">{asset.name}</h3>
                     </div>
-                    {/* Edit/Delete */}
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Edit/Delete - always visible on mobile */}
+                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(asset)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
