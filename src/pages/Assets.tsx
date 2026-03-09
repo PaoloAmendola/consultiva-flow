@@ -126,7 +126,7 @@ const Assets = () => {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredAssets.map(asset => {
             const config = ASSET_TYPE_CONFIG[asset.type] || ASSET_TYPE_CONFIG.PDF;
             const Icon = config.icon;
