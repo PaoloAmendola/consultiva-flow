@@ -95,20 +95,20 @@ const Assets = () => {
           </Button>
         </div>
         
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(null)}>Todos</Button>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" className="flex-shrink-0" onClick={() => setTypeFilter(null)}>Todos</Button>
           {assetTypes.map(type => {
             const config = ASSET_TYPE_CONFIG[type];
             const Icon = config?.icon || FileText;
             return (
-              <Button key={type} variant={typeFilter === type ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(type)} className="gap-1.5">
+              <Button key={type} variant={typeFilter === type ? 'default' : 'outline'} size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setTypeFilter(type)}>
                 <Icon className="h-3.5 w-3.5" />{type}
               </Button>
             );
           })}
-          <div className="w-px h-6 bg-border mx-1" />
-          <Button variant={audienceFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" onClick={() => setAudienceFilter(audienceFilter === 'PROFISSIONAL' ? null : 'PROFISSIONAL')} className="gap-1">👤 Profissional</Button>
-          <Button variant={audienceFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" onClick={() => setAudienceFilter(audienceFilter === 'DISTRIBUIDOR' ? null : 'DISTRIBUIDOR')} className="gap-1">🏢 Distribuidor</Button>
+          <div className="w-px h-6 bg-border mx-1 flex-shrink-0" />
+          <Button variant={audienceFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" className="gap-1 flex-shrink-0" onClick={() => setAudienceFilter(audienceFilter === 'PROFISSIONAL' ? null : 'PROFISSIONAL')}>👤 Prof.</Button>
+          <Button variant={audienceFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" className="gap-1 flex-shrink-0" onClick={() => setAudienceFilter(audienceFilter === 'DISTRIBUIDOR' ? null : 'DISTRIBUIDOR')}>🏢 Distrib.</Button>
         </div>
       </div>
 
