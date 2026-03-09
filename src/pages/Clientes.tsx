@@ -188,8 +188,8 @@ const Clientes = () => {
     setExpandedClient(expandedClient === id ? null : id);
   };
 
-  const getDaysSinceConversion = (updatedAt: string) => {
-    return differenceInDays(new Date(), new Date(updatedAt));
+  const getDaysSinceConversion = (createdAt: string) => {
+    return differenceInDays(new Date(), new Date(createdAt));
   };
 
   if (error) {
