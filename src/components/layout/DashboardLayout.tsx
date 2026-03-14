@@ -29,7 +29,7 @@ export function DashboardLayout({ children, title, subtitle }: DashboardLayoutPr
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 pb-24 content-scroll">
+        <main className="flex-1 overflow-auto px-3 py-3 pb-24 content-scroll">
           {children}
         </main>
 

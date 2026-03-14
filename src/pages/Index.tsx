@@ -98,7 +98,7 @@ const Index = () => {
         <MetricsCards />
       </div>
 
-      <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
+      <div className="grid gap-3 lg:gap-6 lg:grid-cols-3">
         {/* Main content - Actions */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between gap-2">

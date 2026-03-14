@@ -66,14 +66,18 @@ const Trilhas = () => {
       subtitle={isLoading ? 'Carregando...' : `${filteredTracks.length} trilhas disponíveis`}
     >
       {/* Filters + create */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter(null)}>Todas</Button>
-        <Button variant={typeFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('PROFISSIONAL')} className="gap-1.5">👤 Profissional</Button>
-        <Button variant={typeFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" onClick={() => setTypeFilter('DISTRIBUIDOR')} className="gap-1.5">🏢 Distribuidor</Button>
-        <div className="flex-1" />
-        <Button onClick={openCreate} className="gap-1.5">
-          <Plus className="h-4 w-4" /> Nova Trilha
-        </Button>
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex-1" />
+          <Button onClick={openCreate} className="gap-1.5 h-10 flex-shrink-0">
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Nova Trilha</span>
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+          <Button variant={typeFilter === null ? 'default' : 'outline'} size="sm" className="flex-shrink-0" onClick={() => setTypeFilter(null)}>Todas</Button>
+          <Button variant={typeFilter === 'PROFISSIONAL' ? 'default' : 'outline'} size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setTypeFilter('PROFISSIONAL')}>👤 Prof.</Button>
+          <Button variant={typeFilter === 'DISTRIBUIDOR' ? 'default' : 'outline'} size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setTypeFilter('DISTRIBUIDOR')}>🏢 Distrib.</Button>
+        </div>
       </div>
 
       {isLoading ? (

@@ -375,18 +375,18 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
               )}
             />
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-3 pt-4 pb-safe">
               <Button 
                 type="button" 
                 variant="outline" 
-                className="flex-1"
+                className="flex-1 h-11"
                 onClick={() => setOpen(false)}
               >
                 Cancelar
               </Button>
               <Button 
                 type="submit" 
-                className="flex-1"
+                className="flex-1 h-11"
                 disabled={createLead.isPending}
               >
                 {createLead.isPending ? 'Criando...' : 'Criar Lead'}

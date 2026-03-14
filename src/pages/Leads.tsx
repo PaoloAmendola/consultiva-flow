@@ -144,7 +144,7 @@ const Leads = () => {
                     key={opt.value}
                     variant={filters.priority === opt.value ? 'default' : 'outline'}
                     size="sm"
-                    className="h-7 text-xs px-3"
+                    className="h-8 text-xs px-3"
                     onClick={() => setFilters(f => ({
                       ...f,
                       priority: f.priority === opt.value ? undefined : opt.value,

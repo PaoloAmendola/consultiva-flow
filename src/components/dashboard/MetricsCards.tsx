@@ -63,7 +63,7 @@ export function MetricsCards() {
   }).length ?? 0;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
       <MetricCard
         title="Leads Ativos"
         value={totalActive}
