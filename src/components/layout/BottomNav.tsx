@@ -6,7 +6,7 @@ const navItems = [
   { href: '/', icon: Home, label: 'Agora' },
   { href: '/leads', icon: Users, label: 'Leads' },
   { href: '/clientes', icon: UserCheck, label: 'Clientes' },
-  { href: '/proximos', icon: Calendar, label: 'Próximos' },
+  { href: '/proximos', icon: Calendar, label: 'Agenda' },
   { href: '/assets', icon: Package, label: 'Assets' },
 ];
 
