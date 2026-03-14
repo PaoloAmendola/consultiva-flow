@@ -106,9 +106,9 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Criar conta</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-11">
+              <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
+              <TabsTrigger value="signup" className="text-sm">Criar conta</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login" className="space-y-4 mt-4">
@@ -137,7 +137,7 @@ export default function Auth() {
                     autoComplete="current-password"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -187,7 +187,7 @@ export default function Auth() {
                     autoComplete="new-password"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full h-11" disabled={loading}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
