@@ -220,6 +220,10 @@
     padding-top: max(0.75rem, env(safe-area-inset-top));
   }
 
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
   /* Scrollable content area */
   .content-scroll {
     @apply overflow-y-auto overscroll-contain;
