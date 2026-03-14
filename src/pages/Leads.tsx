@@ -118,13 +118,13 @@ const Leads = () => {
           <div className="space-y-3 p-3 bg-secondary/50 rounded-xl animate-fade-in">
             <div>
               <span className="text-xs text-muted-foreground mb-1.5 block">Etapa:</span>
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
                 {ACENDER_SALES_STAGES.map(stage => (
                   <Button
                     key={stage.value}
                     variant={filters.stage === stage.value ? 'default' : 'outline'}
                     size="sm"
-                    className="h-7 text-xs px-2"
+                    className="h-8 text-xs px-2.5 flex-shrink-0"
                     onClick={() => setFilters(f => ({
                       ...f,
                       stage: f.stage === stage.value ? undefined : stage.value,
