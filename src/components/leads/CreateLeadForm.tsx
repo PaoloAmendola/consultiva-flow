@@ -133,15 +133,15 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-6">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem>
                     <FormLabel>Nome *</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome do lead" {...field} />
+                      <Input placeholder="Nome do lead" className="h-11" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,7 +155,7 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
                   <FormItem>
                     <FormLabel>Telefone *</FormLabel>
                     <FormControl>
-                      <Input placeholder="11999999999" {...field} />
+                      <Input placeholder="11999999999" className="h-11" inputMode="tel" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -169,7 +169,7 @@ export function CreateLeadForm({ trigger }: CreateLeadFormProps) {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@exemplo.com" type="email" {...field} />
+                      <Input placeholder="email@exemplo.com" type="email" className="h-11" inputMode="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
