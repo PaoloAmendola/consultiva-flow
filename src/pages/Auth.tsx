@@ -172,11 +172,13 @@ export default function Auth() {
                   <Input
                     id="signup-email"
                     type="email"
+                    inputMode="email"
                     placeholder="seu@email.com"
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     required
                     autoComplete="email"
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
