@@ -191,6 +191,7 @@ export default function Auth() {
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
                     autoComplete="new-password"
+                    className="h-11"
                   />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>

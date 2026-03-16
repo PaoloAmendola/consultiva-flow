@@ -162,7 +162,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
           <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-2.5">
             <FileText className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs text-foreground flex-1 truncate">Asset: {lead.suggestedAssetCode}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+           <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 touch-manipulation">
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </div>

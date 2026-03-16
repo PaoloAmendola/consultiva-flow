@@ -266,14 +266,14 @@ const Proximos = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 hover:bg-emerald-500/20" onClick={() => completeTask.mutate(task.id)}>
+                              <Button size="icon" variant="ghost" className="h-10 w-10 text-success hover:bg-success/20 touch-manipulation" onClick={() => completeTask.mutate(task.id)}>
                                 <CheckCircle className="h-4 w-4" />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => cancelTask.mutate(task.id)}>
+                              <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-destructive touch-manipulation" onClick={() => cancelTask.mutate(task.id)}>
                                 <XCircle className="h-4 w-4" />
                               </Button>
                               <Link to={`/leads/${task.lead_id}`}>
-                                <Button size="icon" variant="ghost" className="h-8 w-8"><ChevronRight className="h-4 w-4" /></Button>
+                                <Button size="icon" variant="ghost" className="h-10 w-10 touch-manipulation"><ChevronRight className="h-4 w-4" /></Button>
                               </Link>
                             </div>
                           </div>
