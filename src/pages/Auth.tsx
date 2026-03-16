@@ -118,11 +118,13 @@ export default function Auth() {
                   <Input
                     id="login-email"
                     type="email"
+                    inputMode="email"
                     placeholder="seu@email.com"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
                     autoComplete="email"
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -135,6 +137,7 @@ export default function Auth() {
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
                     autoComplete="current-password"
+                    className="h-11"
                   />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>
@@ -161,6 +164,7 @@ export default function Auth() {
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
                     autoComplete="name"
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -168,11 +172,13 @@ export default function Auth() {
                   <Input
                     id="signup-email"
                     type="email"
+                    inputMode="email"
                     placeholder="seu@email.com"
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     required
                     autoComplete="email"
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
@@ -185,6 +191,7 @@ export default function Auth() {
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
                     autoComplete="new-password"
+                    className="h-11"
                   />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={loading}>

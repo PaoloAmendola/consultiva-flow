@@ -144,7 +144,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-1.5 right-1.5 h-7 w-7"
+              className="absolute top-1 right-1 h-9 w-9 touch-manipulation"
               onClick={() => handleCopyMessage()}
             >
               <Copy className="h-3.5 w-3.5" />
@@ -162,7 +162,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
           <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-2.5">
             <FileText className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs text-foreground flex-1 truncate">Asset: {lead.suggestedAssetCode}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
+           <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 touch-manipulation">
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -188,20 +188,20 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 flex-shrink-0"
+                    className="h-9 w-9 flex-shrink-0 touch-manipulation"
                     onClick={() => handleCopyMessage(script.content)}
                     title="Copiar script"
                   >
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 flex-shrink-0"
+                    className="h-9 w-9 flex-shrink-0 touch-manipulation"
                     onClick={() => handleWhatsApp(script.content)}
                     title="Enviar via WhatsApp"
                   >
-                    <MessageCircle className="h-3 w-3" />
+                    <MessageCircle className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               ))}
