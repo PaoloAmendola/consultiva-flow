@@ -164,6 +164,7 @@ export default function Auth() {
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
                     autoComplete="name"
+                    className="h-11"
                   />
                 </div>
                 <div className="space-y-2">
