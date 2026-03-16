@@ -144,7 +144,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-1.5 right-1.5 h-7 w-7"
+              className="absolute top-1 right-1 h-9 w-9 touch-manipulation"
               onClick={() => handleCopyMessage()}
             >
               <Copy className="h-3.5 w-3.5" />
