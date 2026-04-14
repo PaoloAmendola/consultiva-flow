@@ -38,17 +38,11 @@ function makeLead(overrides: Partial<DbLead> = {}): DbLead {
 
 describe('NBA Engine', () => {
   it('marks overdue lead as P1', () => {
-    const pastDate = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const lead = makeLead({
-      next_action_at: pastDate,
+      next_action_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       last_touch_at: new Date().toISOString(),
     });
-    console.log('lead.next_action_at:', lead.next_action_at);
-    console.log('pastDate:', pastDate);
-    console.log('now:', new Date().toISOString());
-    console.log('nextActionDate < now:', new Date(lead.next_action_at) < new Date());
     const result = calculateNBA(lead);
-    console.log('result:', JSON.stringify(result, null, 2));
     expect(result.isOverdue).toBe(true);
     expect(result.priority).toBe('P1');
     expect(result.overdueReason).toContain('vencido');
