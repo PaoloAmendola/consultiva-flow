@@ -25,6 +25,7 @@ import { useClientNotifications } from '@/hooks/useClientNotifications';
 import { OrdersPanel } from '@/components/clientes/OrdersPanel';
 import { SubstageFunnelChart } from '@/components/clientes/SubstageFunnelChart';
 import { OrdersEvolutionChart } from '@/components/clientes/OrdersEvolutionChart';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 // Guidance for each post-sale substage
 const SUBSTAGE_GUIDANCE: Record<string, {
@@ -195,9 +196,7 @@ const Clientes = () => {
   if (error) {
     return (
       <DashboardLayout title="Clientes" subtitle="Erro ao carregar">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-destructive">Erro ao carregar clientes. Tente novamente.</p>
-        </div>
+        <ErrorState onRetry={() => window.location.reload()} />
       </DashboardLayout>
     );
   }
