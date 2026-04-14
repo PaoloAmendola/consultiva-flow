@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Filter, X, Columns3, List, AlignJustify } from 'lucide-react';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { useActiveLeads } from '@/hooks/useLeads';
 import { ACENDER_SALES_STAGES, LeadPriority } from '@/types/database';
 import { cn } from '@/lib/utils';
@@ -45,9 +47,7 @@ const Leads = () => {
   if (error) {
     return (
       <DashboardLayout title="Leads" subtitle="Erro ao carregar">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-destructive">Erro ao carregar leads. Tente novamente.</p>
-        </div>
+        <ErrorState onRetry={() => window.location.reload()} />
       </DashboardLayout>
     );
   }
@@ -168,9 +168,7 @@ const Leads = () => {
 
       {/* Pipeline View */}
       {isLoading ? (
-        <div className="space-y-2">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}
-        </div>
+        <LoadingSkeleton variant="list" count={4} />
       ) : viewMode === 'kanban' ? (
         <KanbanBoard leads={leads || []} searchQuery={searchQuery} filters={filters} />
       ) : (
