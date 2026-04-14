@@ -42,7 +42,12 @@ describe('NBA Engine', () => {
       next_action_at: pastDate,
       last_touch_at: new Date().toISOString(),
     });
+    console.log('lead.next_action_at:', lead.next_action_at);
+    console.log('pastDate:', pastDate);
+    console.log('now:', new Date().toISOString());
+    console.log('nextActionDate < now:', new Date(lead.next_action_at) < new Date());
     const result = calculateNBA(lead);
+    console.log('result:', JSON.stringify(result, null, 2));
     expect(result.isOverdue).toBe(true);
     expect(result.priority).toBe('P1');
     expect(result.overdueReason).toContain('vencido');
