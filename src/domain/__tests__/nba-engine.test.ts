@@ -32,13 +32,15 @@ function makeLead(overrides: Partial<DbLead> = {}): DbLead {
     synced_at: null,
     created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(), // 3h ago
     updated_at: now.toISOString(),
-  } satisfies DbLead as DbLead;
+  } as DbLead;
 }
 
 describe('NBA Engine', () => {
   it('marks overdue lead as P1', () => {
+    const pastDate = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const lead = makeLead({
-      next_action_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      next_action_at: pastDate,
+      last_touch_at: new Date().toISOString(),
     });
     const result = calculateNBA(lead);
     expect(result.isOverdue).toBe(true);
@@ -62,15 +64,18 @@ describe('NBA Engine', () => {
   });
 
   it('sortLeadsByActionability puts overdue first', () => {
-    const overdue = enrichLeadWithNBA(makeLead({
+    const overdueLead = makeLead({
       id: 'overdue',
       next_action_at: new Date(Date.now() - 60000).toISOString(),
-    }));
-    const upcoming = enrichLeadWithNBA(makeLead({
+      last_touch_at: new Date().toISOString(),
+    });
+    const upcomingLead = makeLead({
       id: 'upcoming',
       next_action_at: new Date(Date.now() + 3600000).toISOString(),
       last_touch_at: new Date().toISOString(),
-    }));
+    });
+    const overdue = enrichLeadWithNBA(overdueLead);
+    const upcoming = enrichLeadWithNBA(upcomingLead);
     const sorted = sortLeadsByActionability([upcoming, overdue]);
     expect(sorted[0].id).toBe('overdue');
   });
