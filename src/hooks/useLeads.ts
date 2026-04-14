@@ -11,7 +11,7 @@ import {
   LeadStatusFinal,
   LeadPriority
 } from '@/types/database';
-import { enrichLeadWithNBA, sortLeadsByActionability, NBAResult } from '@/lib/nba-engine';
+import { enrichLeadWithNBA, sortLeadsByActionability, NBAResult } from '@/domain/nba-engine';
 
 export type EnrichedLead = DbLead & NBAResult;
 
