@@ -1,29 +1,20 @@
 import { 
-  MessageCircle, 
-  Phone, 
-  CheckCircle, 
-  Clock, 
-  ChevronRight,
-  FileText,
-  Copy,
-  ExternalLink,
-  ScrollText,
-  ArrowRight,
+  MessageCircle, Phone, CheckCircle, Clock, ChevronRight,
+  FileText, Copy, ExternalLink, ScrollText, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { EnrichedLead } from '@/hooks/useLeads';
 import { useScripts } from '@/hooks/useScripts';
 import { 
-  ACENDER_STAGES,
-  ORIGIN_LABELS,
-  ACTION_TYPE_CONFIG,
-  STAGE_GUIDANCE,
-  mapLegacyStage,
+  ACENDER_STAGES, ORIGIN_LABELS, ACTION_TYPE_CONFIG, STAGE_GUIDANCE, mapLegacyStage,
 } from '@/types/database';
+import { buildLeadContext } from '@/domain/nba-engine';
+import { calculateLeadScore } from '@/domain/lead-scoring';
 import { QuickCoachTip } from './QuickCoachTip';
 import { useState } from 'react';
 
@@ -39,6 +30,10 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
   const guidance = STAGE_GUIDANCE[resolvedStage];
   const { data: scripts } = useScripts(resolvedStage);
   const [showScripts, setShowScripts] = useState(false);
+
+  // Compute operational score
+  const ctx = buildLeadContext(lead);
+  const score = calculateLeadScore(ctx);
   
   const priorityClass = lead.priority === 'P1' ? 'action-card-urgent' 
     : lead.priority === 'P2' ? 'action-card-warning' 
@@ -68,10 +63,18 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
 
   return (
     <div className={cn('action-card', priorityClass, 'animate-fade-in')}>
-      {/* Header: Name + Stage + Priority */}
+      {/* Header: Name + Stage + Priority dot + Score */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
+            {/* Priority dot */}
+            <div className={cn(
+              'w-2 h-2 rounded-full flex-shrink-0',
+              lead.priority === 'P1' && 'bg-destructive',
+              lead.priority === 'P2' && 'bg-warning',
+              lead.priority === 'P3' && 'bg-info',
+              lead.priority === 'P4' && 'bg-muted-foreground',
+            )} />
             <Link 
               to={`/leads/${lead.id}`}
               className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate"
@@ -95,17 +98,24 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
             )}
           </div>
         </div>
-        <Badge 
-          variant="outline" 
-          className={cn(
-            'text-[10px] font-bold flex-shrink-0 ml-2',
-            lead.priority === 'P1' && 'border-destructive text-destructive',
-            lead.priority === 'P2' && 'border-warning text-warning',
-            lead.priority === 'P3' && 'border-info text-info',
-          )}
-        >
-          {lead.priority}
-        </Badge>
+        {/* Score indicator */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-2">
+          <Badge 
+            variant="outline" 
+            className={cn(
+              'text-[10px] font-bold',
+              lead.priority === 'P1' && 'border-destructive text-destructive',
+              lead.priority === 'P2' && 'border-warning text-warning',
+              lead.priority === 'P3' && 'border-info text-info',
+            )}
+          >
+            {lead.priority}
+          </Badge>
+          <div className="flex items-center gap-1.5 w-16">
+            <Progress value={score.total} className="h-1" />
+            <span className="text-[9px] text-muted-foreground font-mono">{score.total}</span>
+          </div>
+        </div>
       </div>
 
       {/* Overdue */}
@@ -162,7 +172,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
           <div className="flex items-center gap-2 bg-secondary/50 rounded-lg p-2.5">
             <FileText className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs text-foreground flex-1 truncate">Asset: {lead.suggestedAssetCode}</span>
-           <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 touch-manipulation">
+            <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 touch-manipulation">
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -185,22 +195,10 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
               {scripts.slice(0, 4).map(script => (
                 <div key={script.id} className="flex items-center gap-1.5 bg-secondary/30 rounded-lg p-2">
                   <span className="text-[11px] text-foreground flex-1 truncate">{script.title}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 flex-shrink-0 touch-manipulation"
-                    onClick={() => handleCopyMessage(script.content)}
-                    title="Copiar script"
-                  >
+                  <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 touch-manipulation" onClick={() => handleCopyMessage(script.content)} title="Copiar script">
                     <Copy className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 flex-shrink-0 touch-manipulation"
-                    onClick={() => handleWhatsApp(script.content)}
-                    title="Enviar via WhatsApp"
-                  >
+                  <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 touch-manipulation" onClick={() => handleWhatsApp(script.content)} title="Enviar via WhatsApp">
                     <MessageCircle className="h-3.5 w-3.5" />
                   </Button>
                 </div>

@@ -21,6 +21,7 @@ import {
   Calendar, CheckCircle, XCircle, ChevronRight, Clock, 
   AlertTriangle, ListTodo, Target, BarChart3 
 } from 'lucide-react';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 const Proximos = () => {
   const { data: leads, isLoading, error } = useActiveLeads();
@@ -85,26 +86,23 @@ const Proximos = () => {
     const lead = leads?.find(l => l.id === leadId);
     if (!lead) return;
     await createInteraction.mutateAsync({ lead_id: leadId, type: 'NOTA', direction: 'OUT', content: `Ação concluída: ${lead.next_action_type}` });
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    await updateLead.mutateAsync({ id: leadId, data: { next_action_at: tomorrow.toISOString(), next_action_type: 'FOLLOW_UP', next_action_note: 'Acompanhamento' } });
+    const { getDefaultNextAction, getRescheduleUpdate } = await import('@/domain/stage-transitions');
+    const nextAction = getDefaultNextAction();
+    await updateLead.mutateAsync({ id: leadId, data: nextAction });
     toast.success('Ação concluída!');
   };
 
   const handleReschedule = async (leadId: string) => {
-    const twoHoursFromNow = new Date();
-    twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2);
-    await updateLead.mutateAsync({ id: leadId, data: { next_action_at: twoHoursFromNow.toISOString() } });
+    const { getRescheduleUpdate } = await import('@/domain/stage-transitions');
+    const reschedule = getRescheduleUpdate();
+    await updateLead.mutateAsync({ id: leadId, data: reschedule });
     toast.info('Reagendado para daqui 2 horas');
   };
 
   if (error) {
     return (
       <DashboardLayout title="Próximos 7 dias" subtitle="Erro ao carregar">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-destructive">Erro ao carregar. Tente novamente.</p>
-        </div>
+        <ErrorState onRetry={() => window.location.reload()} />
       </DashboardLayout>
     );
   }

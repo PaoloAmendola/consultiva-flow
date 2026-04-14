@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { MessageCircle, Phone, Calendar, FileText, Mail, ChevronDown, ChevronUp, Sparkles, Route, Send, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { ACTION_TYPE_CONFIG, LeadType, DbNurtureTrack } from '@/types/database';
 import { cn } from '@/lib/utils';
 
@@ -53,9 +55,7 @@ const Trilhas = () => {
   if (error) {
     return (
       <DashboardLayout title="Trilhas de Nutrição" subtitle="Erro ao carregar">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-destructive">Erro ao carregar trilhas. Tente novamente.</p>
-        </div>
+        <ErrorState onRetry={() => window.location.reload()} />
       </DashboardLayout>
     );
   }
@@ -81,9 +81,7 @@ const Trilhas = () => {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-xl" />)}
-        </div>
+        <LoadingSkeleton variant="grid" count={4} />
       ) : filteredTracks.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
           {filteredTracks.map(track => {

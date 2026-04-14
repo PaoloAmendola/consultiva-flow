@@ -123,22 +123,22 @@
 }
 
 @layer components {
-  /* Action card styles */
+  /* Action card styles - clean premium design */
   .action-card {
     @apply bg-card rounded-xl border border-border p-4 transition-all duration-200;
     @apply hover:border-primary/30 active:scale-[0.98] touch-manipulation;
   }
 
   .action-card-urgent {
-    @apply border-l-4 border-l-destructive;
+    @apply ring-1 ring-destructive/30;
   }
 
   .action-card-warning {
-    @apply border-l-4 border-l-warning;
+    @apply ring-1 ring-warning/20;
   }
 
   .action-card-normal {
-    @apply border-l-4 border-l-info;
+    /* no extra decoration for normal priority */
   }
 
   /* Touch-friendly buttons */

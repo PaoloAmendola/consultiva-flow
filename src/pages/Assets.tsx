@@ -10,6 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Search, FileText, Video, Image, Link as LinkIcon, Headphones, ExternalLink, Copy, Package, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DbAsset } from '@/types/database';
@@ -66,9 +68,7 @@ const Assets = () => {
   if (error) {
     return (
       <DashboardLayout title="Assets" subtitle="Erro ao carregar">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-destructive">Erro ao carregar assets. Tente novamente.</p>
-        </div>
+        <ErrorState onRetry={() => window.location.reload()} />
       </DashboardLayout>
     );
   }
@@ -114,9 +114,7 @@ const Assets = () => {
 
       {/* Asset grid */}
       {isLoading ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 rounded-xl" />)}
-        </div>
+        <LoadingSkeleton variant="grid" count={6} />
       ) : filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Package className="h-12 w-12 text-muted-foreground mb-4" />
