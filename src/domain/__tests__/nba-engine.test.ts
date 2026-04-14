@@ -24,14 +24,15 @@ function makeLead(overrides: Partial<DbLead> = {}): DbLead {
     nurture_track_id: null,
     nurture_step: null,
     next_action_type: 'WHATSAPP',
-    next_action_at: new Date(now.getTime() + 60 * 60 * 1000).toISOString(), // 1h from now
+    next_action_at: new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
     next_action_note: null,
     last_touch_at: null,
     status_final: 'ATIVO',
     observations: null,
     synced_at: null,
-    created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(), // 3h ago
+    created_at: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
     updated_at: now.toISOString(),
+    ...overrides,
   } as DbLead;
 }
 
