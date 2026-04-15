@@ -153,8 +153,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 }
 
 function DefaultPlaybooks() {
-  // Render STAGE_GUIDANCE as default playbooks
-  const { STAGE_GUIDANCE } = require('@/types/database');
+  const STAGE_GUIDANCE_IMPORT = require('@/types/database').STAGE_GUIDANCE;
 
   return (
     <div className="space-y-4">
