@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSalesCoach, SalesCoachRecommendation } from '@/hooks/useSalesCoach';
+import { useTrackAiEvent } from '@/hooks/useAiAnalytics';
 import { EnrichedLead } from '@/hooks/useLeads';
 import { cn } from '@/lib/utils';
 
@@ -28,11 +29,21 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
   const [recommendations, setRecommendations] = useState<SalesCoachRecommendation | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const salesCoach = useSalesCoach(lead.id);
+  const trackAi = useTrackAiEvent();
 
   const handleGetRecommendations = async () => {
     try {
       const result = await salesCoach.mutateAsync(lead);
       setRecommendations(result);
+      // Track AI suggestion shown
+      trackAi.mutate({
+        lead_id: lead.id,
+        event_type: 'shown',
+        suggested_action: result.recommended_action?.type,
+        suggested_channel: result.recommended_action?.type,
+        suggested_asset: result.recommended_material?.code || undefined,
+        recommendation_summary: result.summary,
+      });
     } catch (error) {
       toast.error('Erro ao obter sugestões do assistente');
     }
