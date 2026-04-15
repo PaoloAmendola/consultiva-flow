@@ -275,6 +275,60 @@ export type Database = {
         }
         Relationships: []
       }
+      playbooks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key_questions: string[] | null
+          lead_type: string
+          next_stage_trigger: string | null
+          objection_handlers: Json | null
+          objectives: string[] | null
+          recommended_assets: string[] | null
+          scripts: Json | null
+          sort_order: number
+          stage: string
+          success_criteria: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_questions?: string[] | null
+          lead_type?: string
+          next_stage_trigger?: string | null
+          objection_handlers?: Json | null
+          objectives?: string[] | null
+          recommended_assets?: string[] | null
+          scripts?: Json | null
+          sort_order?: number
+          stage: string
+          success_criteria?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_questions?: string[] | null
+          lead_type?: string
+          next_stage_trigger?: string | null
+          objection_handlers?: Json | null
+          objectives?: string[] | null
+          recommended_assets?: string[] | null
+          scripts?: Json | null
+          sort_order?: number
+          stage?: string
+          success_criteria?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
