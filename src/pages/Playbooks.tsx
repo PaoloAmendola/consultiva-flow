@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BookOpen, Target, HelpCircle, MessageSquare, FileText, Shield, CheckCircle, ArrowRight } from 'lucide-react';
-import { ACENDER_STAGES, getStageLabel } from '@/types/database';
+import { ACENDER_STAGES, STAGE_GUIDANCE, getStageLabel } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 const Playbooks = () => {
@@ -153,7 +153,6 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 }
 
 function DefaultPlaybooks() {
-  const STAGE_GUIDANCE_IMPORT = require('@/types/database').STAGE_GUIDANCE;
 
   return (
     <div className="space-y-4">
