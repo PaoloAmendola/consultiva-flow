@@ -13,6 +13,8 @@ import LeadProfile from "./pages/LeadProfile";
 import Assets from "./pages/Assets";
 import Trilhas from "./pages/Trilhas";
 import Clientes from "./pages/Clientes";
+import Gerencial from "./pages/Gerencial";
+import Playbooks from "./pages/Playbooks";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +37,8 @@ const App = () => (
               <Route path="/assets" element={<ProtectedRoute><Assets /></ProtectedRoute>} />
               <Route path="/trilhas" element={<ProtectedRoute><Trilhas /></ProtectedRoute>} />
               <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+              <Route path="/gerencial" element={<ProtectedRoute><Gerencial /></ProtectedRoute>} />
+              <Route path="/playbooks" element={<ProtectedRoute><Playbooks /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

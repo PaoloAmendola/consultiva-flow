@@ -5,7 +5,8 @@ import {
   CalendarDays, 
   FileText, 
   Route,
-  Settings,
+  BarChart3,
+  BookOpen,
   LogOut
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
@@ -36,6 +37,8 @@ const mainItems = [
 const resourceItems = [
   { title: 'Assets', url: '/assets', icon: FileText },
   { title: 'Trilhas', url: '/trilhas', icon: Route },
+  { title: 'Playbooks', url: '/playbooks', icon: BookOpen },
+  { title: 'Gerencial', url: '/gerencial', icon: BarChart3 },
 ];
 
 export function DashboardSidebar() {

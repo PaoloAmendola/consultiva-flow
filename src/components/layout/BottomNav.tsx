@@ -1,4 +1,4 @@
-import { Home, Calendar, Users, Package, UserCheck } from 'lucide-react';
+import { Home, Users, UserCheck, BarChart3, BookOpen } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -6,8 +6,8 @@ const navItems = [
   { href: '/', icon: Home, label: 'Agora' },
   { href: '/leads', icon: Users, label: 'Leads' },
   { href: '/clientes', icon: UserCheck, label: 'Clientes' },
-  { href: '/proximos', icon: Calendar, label: 'Agenda' },
-  { href: '/assets', icon: Package, label: 'Assets' },
+  { href: '/gerencial', icon: BarChart3, label: 'Gerencial' },
+  { href: '/playbooks', icon: BookOpen, label: 'Playbooks' },
 ];
 
 export function BottomNav() {
