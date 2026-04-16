@@ -1,30 +1,54 @@
 import { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { usePlaybooks } from '@/hooks/usePlaybooks';
+import { usePlaybooks, type Playbook } from '@/hooks/usePlaybooks';
+import { useDeletePlaybook } from '@/hooks/usePlaybookMutations';
+import { useIsAdmin } from '@/hooks/useUserRole';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, Target, HelpCircle, MessageSquare, FileText, Shield, CheckCircle, ArrowRight } from 'lucide-react';
-import { ACENDER_STAGES, STAGE_GUIDANCE, getStageLabel } from '@/types/database';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
+import { BookOpen, Target, HelpCircle, MessageSquare, Shield, CheckCircle, ArrowRight, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ACENDER_STAGES, STAGE_GUIDANCE } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { PlaybookFormModal } from '@/components/playbooks/PlaybookFormModal';
 
 const Playbooks = () => {
   const [selectedType, setSelectedType] = useState('PROFISSIONAL');
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<Playbook | null>(null);
   const { data: playbooks, isLoading } = usePlaybooks(undefined, selectedType);
+  const isAdmin = useIsAdmin();
+  const deletePb = useDeletePlaybook();
 
   const stages = ACENDER_STAGES;
 
+  const openNew = () => { setEditing(null); setEditorOpen(true); };
+  const openEdit = (pb: Playbook) => { setEditing(pb); setEditorOpen(true); };
+
   return (
     <DashboardLayout title="Playbooks" subtitle="Roteiros comerciais por etapa">
-      <Tabs value={selectedType} onValueChange={setSelectedType} className="mb-4">
-        <TabsList>
-          <TabsTrigger value="PROFISSIONAL">Profissional</TabsTrigger>
-          <TabsTrigger value="DISTRIBUIDOR">Distribuidor</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <Tabs value={selectedType} onValueChange={setSelectedType}>
+          <TabsList>
+            <TabsTrigger value="PROFISSIONAL">Profissional</TabsTrigger>
+            <TabsTrigger value="DISTRIBUIDOR">Distribuidor</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {isAdmin && (
+          <Button onClick={openNew} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Novo Playbook
+          </Button>
+        )}
+      </div>
 
       {isLoading ? (
         <LoadingSkeleton variant="card" count={3} />
@@ -33,9 +57,11 @@ const Playbooks = () => {
           <EmptyState
             icon={BookOpen}
             title="Nenhum playbook cadastrado"
-            description="Os playbooks são roteiros consultivos para cada etapa do pipeline. Use os roteiros padrão do ACENDER® abaixo."
+            description={isAdmin
+              ? 'Crie um playbook customizado ou use os roteiros padrão ACENDER® abaixo.'
+              : 'Os playbooks são roteiros consultivos para cada etapa do pipeline. Use os roteiros padrão do ACENDER® abaixo.'}
+            action={isAdmin ? { label: 'Criar Playbook', onClick: openNew } : undefined}
           />
-          {/* Show default ACENDER guidance as fallback playbooks */}
           <DefaultPlaybooks />
         </div>
       ) : (
@@ -56,7 +82,13 @@ const Playbooks = () => {
                 <CardContent>
                   <Accordion type="single" collapsible>
                     {stagePlaybooks.map(pb => (
-                      <PlaybookItem key={pb.id} playbook={pb} />
+                      <PlaybookItem
+                        key={pb.id}
+                        playbook={pb}
+                        isAdmin={isAdmin}
+                        onEdit={() => openEdit(pb)}
+                        onDelete={() => deletePb.mutate(pb.id)}
+                      />
                     ))}
                   </Accordion>
                 </CardContent>
@@ -65,20 +97,55 @@ const Playbooks = () => {
           })}
         </div>
       )}
+
+      <PlaybookFormModal
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        playbook={editing}
+      />
     </DashboardLayout>
   );
 };
 
-function PlaybookItem({ playbook }: { playbook: any }) {
+function PlaybookItem({
+  playbook, isAdmin, onEdit, onDelete,
+}: { playbook: Playbook; isAdmin: boolean; onEdit: () => void; onDelete: () => void }) {
   return (
     <AccordionItem value={playbook.id}>
       <AccordionTrigger className="text-sm font-medium hover:no-underline">
-        <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-primary" />
-          {playbook.title}
+        <div className="flex items-center gap-2 flex-1 text-left">
+          <BookOpen className="h-4 w-4 text-primary shrink-0" />
+          <span className="flex-1">{playbook.title}</span>
         </div>
       </AccordionTrigger>
       <AccordionContent className="space-y-4 pt-2">
+        {isAdmin && (
+          <div className="flex items-center gap-2 -mt-1 mb-1">
+            <Button size="sm" variant="outline" className="h-7 gap-1.5" onClick={onEdit}>
+              <Pencil className="h-3.5 w-3.5" /> Editar
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-7 gap-1.5 text-destructive hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" /> Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir playbook?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    "{playbook.title}" será removido permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>Excluir</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+
         {playbook.description && (
           <p className="text-sm text-muted-foreground">{playbook.description}</p>
         )}
@@ -86,7 +153,7 @@ function PlaybookItem({ playbook }: { playbook: any }) {
         {playbook.objectives?.length > 0 && (
           <Section icon={<Target className="h-4 w-4" />} title="Objetivos">
             <ul className="space-y-1">
-              {playbook.objectives.map((o: string, i: number) => (
+              {playbook.objectives.map((o, i) => (
                 <li key={i} className="text-sm flex items-start gap-2">
                   <CheckCircle className="h-3.5 w-3.5 text-success mt-0.5 shrink-0" />
                   {o}
@@ -99,7 +166,7 @@ function PlaybookItem({ playbook }: { playbook: any }) {
         {playbook.key_questions?.length > 0 && (
           <Section icon={<HelpCircle className="h-4 w-4" />} title="Perguntas-Chave">
             <ul className="space-y-1">
-              {playbook.key_questions.map((q: string, i: number) => (
+              {playbook.key_questions.map((q, i) => (
                 <li key={i} className="text-sm text-muted-foreground">• {q}</li>
               ))}
             </ul>
@@ -108,7 +175,7 @@ function PlaybookItem({ playbook }: { playbook: any }) {
 
         {playbook.scripts?.length > 0 && (
           <Section icon={<MessageSquare className="h-4 w-4" />} title="Scripts">
-            {playbook.scripts.map((s: any, i: number) => (
+            {playbook.scripts.map((s, i) => (
               <div key={i} className="bg-muted/50 rounded-lg p-3 mb-2">
                 {s.label && <p className="text-xs font-medium text-muted-foreground mb-1">{s.label}</p>}
                 <p className="text-sm">{s.content}</p>
@@ -119,7 +186,7 @@ function PlaybookItem({ playbook }: { playbook: any }) {
 
         {playbook.objection_handlers?.length > 0 && (
           <Section icon={<Shield className="h-4 w-4" />} title="Objeções">
-            {playbook.objection_handlers.map((o: any, i: number) => (
+            {playbook.objection_handlers.map((o, i) => (
               <div key={i} className="mb-2">
                 <p className="text-sm font-medium text-destructive/80">"{o.objection}"</p>
                 <p className="text-sm text-muted-foreground ml-3">→ {o.response}</p>
@@ -153,7 +220,6 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
 }
 
 function DefaultPlaybooks() {
-
   return (
     <div className="space-y-4">
       {ACENDER_STAGES.map(stage => {
@@ -180,7 +246,7 @@ function DefaultPlaybooks() {
               {guidance.scripts.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Scripts</p>
-                  {guidance.scripts.map((s: string, i: number) => (
+                  {guidance.scripts.map((s, i) => (
                     <div key={i} className="bg-muted/50 rounded-lg p-2.5 mb-1.5 text-sm">{s}</div>
                   ))}
                 </div>
@@ -189,7 +255,7 @@ function DefaultPlaybooks() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Objeções Comuns</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {guidance.objections.map((o: string, i: number) => (
+                    {guidance.objections.map((o, i) => (
                       <Badge key={i} variant="secondary" className="text-xs">{o}</Badge>
                     ))}
                   </div>
