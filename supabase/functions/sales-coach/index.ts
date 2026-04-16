@@ -104,6 +104,52 @@ serve(async (req) => {
 
     console.log("Processing sales coach request for user:", claimsData.claims.sub, "lead:", lead_context.name);
 
+    // Load matching playbook (if any) to ground recommendations
+    let playbookSection = '';
+    try {
+      const { data: playbook } = await supabaseClient
+        .from('playbooks')
+        .select('title, description, objectives, key_questions, scripts, objection_handlers, success_criteria, next_stage_trigger')
+        .eq('stage', lead_context.stage)
+        .eq('lead_type', lead_context.lead_type)
+        .order('sort_order', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (playbook) {
+        const objectives = (playbook.objectives ?? []).map((o: string) => `  • ${o}`).join('\n');
+        const questions = (playbook.key_questions ?? []).map((q: string) => `  • ${q}`).join('\n');
+        const scripts = (playbook.scripts ?? []).map((s: any) => `  [${s.label || 'Script'}] ${s.content}`).join('\n');
+        const objections = (playbook.objection_handlers ?? []).map((o: any) => `  • "${o.objection}" → ${o.response}`).join('\n');
+        const success = (playbook.success_criteria ?? []).map((c: string) => `  • ${c}`).join('\n');
+
+        playbookSection = `\n\nPLAYBOOK OFICIAL DESTA ETAPA (USE COMO BASE PRINCIPAL):
+Título: ${playbook.title}
+${playbook.description ? `Descrição: ${playbook.description}` : ''}
+
+Objetivos da etapa:
+${objectives || '  (não informado)'}
+
+Perguntas-chave a explorar:
+${questions || '  (não informado)'}
+
+Scripts oficiais (adapte ao lead, mantendo o tom):
+${scripts || '  (não informado)'}
+
+Objeções esperadas e respostas validadas:
+${objections || '  (não informado)'}
+
+Critérios de sucesso para avançar:
+${success || '  (não informado)'}
+${playbook.next_stage_trigger ? `Trigger para próxima etapa: ${playbook.next_stage_trigger}` : ''}
+
+INSTRUÇÃO CRÍTICA: Suas sugestões DEVEM seguir este playbook. Use os scripts como base (personalize com o nome do lead), antecipe as objeções listadas e oriente em direção aos critérios de sucesso.`;
+        console.log('Loaded playbook for', lead_context.stage, lead_context.lead_type);
+      }
+    } catch (e) {
+      console.warn('Could not load playbook:', e);
+    }
+
     const userPrompt = `Analise este lead e forneça recomendações:
 
 DADOS DO LEAD:
@@ -121,6 +167,7 @@ ${lead_context.observations ? `- Observações: ${lead_context.observations}` : 
 
 MATERIAIS DISPONÍVEIS:
 ${lead_context.available_assets.map(a => `- ${a.code}: ${a.name} (${a.type})`).join('\n')}
+${playbookSection}
 
 Responda com um JSON no formato:
 {
