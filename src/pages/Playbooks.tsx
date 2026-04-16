@@ -60,7 +60,11 @@ const Playbooks = () => {
             description={isAdmin
               ? 'Crie um playbook customizado ou use os roteiros padrão ACENDER® abaixo.'
               : 'Os playbooks são roteiros consultivos para cada etapa do pipeline. Use os roteiros padrão do ACENDER® abaixo.'}
-            action={isAdmin ? { label: 'Criar Playbook', onClick: openNew } : undefined}
+            action={isAdmin ? (
+              <Button onClick={openNew} size="sm" className="gap-2">
+                <Plus className="h-4 w-4" /> Criar Playbook
+              </Button>
+            ) : undefined}
           />
           <DefaultPlaybooks />
         </div>
