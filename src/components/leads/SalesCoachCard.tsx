@@ -31,14 +31,15 @@ interface SalesCoachCardProps {
 export function SalesCoachCard({ lead }: SalesCoachCardProps) {
   const [recommendations, setRecommendations] = useState<SalesCoachRecommendation | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'accepted' | 'ignored' | null>(null);
   const salesCoach = useSalesCoach(lead.id);
   const trackAi = useTrackAiEvent();
 
   const handleGetRecommendations = async () => {
     try {
+      setFeedback(null);
       const result = await salesCoach.mutateAsync(lead);
       setRecommendations(result);
-      // Track AI suggestion shown
       trackAi.mutate({
         lead_id: lead.id,
         event_type: 'shown',
@@ -50,6 +51,34 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
     } catch (error) {
       toast.error('Erro ao obter sugestões do assistente');
     }
+  };
+
+  const handleAccept = () => {
+    if (!recommendations) return;
+    setFeedback('accepted');
+    trackAi.mutate({
+      lead_id: lead.id,
+      event_type: 'accepted',
+      suggested_action: recommendations.recommended_action?.type,
+      suggested_channel: recommendations.recommended_action?.type,
+      suggested_asset: recommendations.recommended_material?.code || undefined,
+      recommendation_summary: recommendations.summary,
+    });
+    toast.success('Sugestão aceita! Bons resultados.');
+  };
+
+  const handleIgnore = () => {
+    if (!recommendations) return;
+    setFeedback('ignored');
+    trackAi.mutate({
+      lead_id: lead.id,
+      event_type: 'ignored',
+      suggested_action: recommendations.recommended_action?.type,
+      suggested_channel: recommendations.recommended_action?.type,
+      suggested_asset: recommendations.recommended_material?.code || undefined,
+      recommendation_summary: recommendations.summary,
+    });
+    toast.info('Sugestão dispensada. Obrigado pelo feedback!');
   };
 
   const copyToClipboard = (text: string, field: string) => {
