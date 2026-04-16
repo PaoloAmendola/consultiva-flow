@@ -14,6 +14,9 @@ import {
   Lightbulb,
   ArrowRight,
   RefreshCw,
+  ThumbsUp,
+  ThumbsDown,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSalesCoach, SalesCoachRecommendation } from '@/hooks/useSalesCoach';
