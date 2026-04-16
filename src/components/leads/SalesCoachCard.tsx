@@ -315,6 +315,49 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
             </div>
           </div>
         )}
+
+        {/* Feedback buttons */}
+        <div className="pt-3 border-t">
+          {feedback === null ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Esta sugestão foi útil?</span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5"
+                  onClick={handleAccept}
+                >
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  <span className="text-xs">Aceitar</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 gap-1.5 text-muted-foreground"
+                  onClick={handleIgnore}
+                >
+                  <ThumbsDown className="h-3.5 w-3.5" />
+                  <span className="text-xs">Ignorar</span>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {feedback === 'accepted' ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-success" />
+                  <span>Sugestão aceita — feedback registrado</span>
+                </>
+              ) : (
+                <>
+                  <X className="h-3.5 w-3.5" />
+                  <span>Sugestão ignorada — feedback registrado</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
