@@ -75,10 +75,7 @@ const LeadProfile = () => {
   if (leadLoading) {
     return (
       <DashboardLayout title="Carregando..." subtitle="">
-        <div className="space-y-4">
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl" />
-        </div>
+        <LoadingSkeleton variant="card" count={2} />
       </DashboardLayout>
     );
   }
