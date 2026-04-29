@@ -7,7 +7,6 @@ import { KanbanBoard } from '@/components/leads/KanbanBoard';
 import { LeadListView } from '@/components/leads/LeadListView';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Filter, X, Columns3, List, AlignJustify } from 'lucide-react';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
@@ -40,14 +39,14 @@ const Leads = () => {
   const [filters, setFilters] = useState<LeadFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
-  const { data: leads, isLoading, error } = useActiveLeads();
+  const { data: leads, isLoading, error, refetch } = useActiveLeads();
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   if (error) {
     return (
       <DashboardLayout title="Leads" subtitle="Erro ao carregar">
-        <ErrorState onRetry={() => window.location.reload()} />
+        <ErrorState onRetry={() => refetch()} />
       </DashboardLayout>
     );
   }
