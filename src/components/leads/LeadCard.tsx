@@ -35,9 +35,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
   const ctx = buildLeadContext(lead);
   const score = calculateLeadScore(ctx);
   
-  const priorityClass = lead.priority === 'P1' ? 'action-card-urgent' 
-    : lead.priority === 'P2' ? 'action-card-warning' 
-    : 'action-card-normal';
+  const isP1 = lead.priority === 'P1';
 
   const handleCopyMessage = (message?: string) => {
     const msg = message || lead.suggestedMessage;
@@ -62,19 +60,21 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
   };
 
   return (
-    <div className={cn('action-card', priorityClass, 'animate-fade-in')}>
-      {/* Header: Name + Stage + Priority dot + Score */}
-      <div className="flex items-start justify-between mb-2">
+    <div className={cn('action-card animate-fade-in', isP1 && 'action-card-urgent')}>
+      {/* Header: dot + name + stage + discrete score */}
+      <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            {/* Priority dot */}
-            <div className={cn(
-              'w-2 h-2 rounded-full flex-shrink-0',
-              lead.priority === 'P1' && 'bg-destructive',
-              lead.priority === 'P2' && 'bg-warning',
-              lead.priority === 'P3' && 'bg-info',
-              lead.priority === 'P4' && 'bg-muted-foreground',
-            )} />
+            <div
+              className={cn(
+                'w-2 h-2 rounded-full flex-shrink-0',
+                lead.priority === 'P1' && 'bg-destructive',
+                lead.priority === 'P2' && 'bg-warning',
+                lead.priority === 'P3' && 'bg-info',
+                lead.priority === 'P4' && 'bg-muted-foreground',
+              )}
+              aria-label={`Prioridade ${lead.priority}`}
+            />
             <Link 
               to={`/leads/${lead.id}`}
               className="text-sm font-semibold text-foreground hover:text-primary transition-colors truncate"
@@ -94,26 +94,18 @@ export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
               {ORIGIN_LABELS[lead.origin]}
             </span>
             {lead.company && (
-              <span className="text-[10px] text-muted-foreground">• {lead.company}</span>
+              <span className="text-[10px] text-muted-foreground truncate">• {lead.company}</span>
             )}
           </div>
         </div>
-        {/* Score indicator */}
-        <div className="flex flex-col items-end gap-1 flex-shrink-0 ml-2">
-          <Badge 
-            variant="outline" 
-            className={cn(
-              'text-[10px] font-bold',
-              lead.priority === 'P1' && 'border-destructive text-destructive',
-              lead.priority === 'P2' && 'border-warning text-warning',
-              lead.priority === 'P3' && 'border-info text-info',
-            )}
-          >
-            {lead.priority}
-          </Badge>
+        {/* Discrete score */}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <span className="text-[10px] text-muted-foreground font-mono leading-none">
+            score
+          </span>
           <div className="flex items-center gap-1.5 w-16">
             <Progress value={score.total} className="h-1" />
-            <span className="text-[9px] text-muted-foreground font-mono">{score.total}</span>
+            <span className="text-[10px] text-foreground font-mono tabular-nums">{score.total}</span>
           </div>
         </div>
       </div>

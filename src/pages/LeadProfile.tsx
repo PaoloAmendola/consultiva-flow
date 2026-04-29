@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { 
   ArrowLeft, 
   MessageCircle, 
@@ -75,10 +76,7 @@ const LeadProfile = () => {
   if (leadLoading) {
     return (
       <DashboardLayout title="Carregando..." subtitle="">
-        <div className="space-y-4">
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl" />
-        </div>
+        <LoadingSkeleton variant="card" count={2} />
       </DashboardLayout>
     );
   }

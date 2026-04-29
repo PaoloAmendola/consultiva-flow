@@ -4,7 +4,8 @@ import { LeadCard } from '@/components/leads/LeadCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useActiveLeads, useUpdateLead } from '@/hooks/useLeads';
 import { useOpenTasks, useCompleteTask, useCancelTask } from '@/hooks/useTasks';
@@ -24,8 +25,8 @@ import {
 import { ErrorState } from '@/components/ui/ErrorState';
 
 const Proximos = () => {
-  const { data: leads, isLoading, error } = useActiveLeads();
-  const { data: tasks, isLoading: tasksLoading } = useOpenTasks();
+  const { data: leads, isLoading, error, refetch } = useActiveLeads();
+  const { data: tasks, isLoading: tasksLoading, refetch: refetchTasks } = useOpenTasks();
   const updateLead = useUpdateLead();
   const createInteraction = useCreateInteraction();
   const completeTask = useCompleteTask();
@@ -102,7 +103,7 @@ const Proximos = () => {
   if (error) {
     return (
       <DashboardLayout title="Próximos 7 dias" subtitle="Erro ao carregar">
-        <ErrorState onRetry={() => window.location.reload()} />
+        <ErrorState onRetry={() => { refetch(); refetchTasks(); }} />
       </DashboardLayout>
     );
   }
@@ -181,7 +182,7 @@ const Proximos = () => {
 
         <TabsContent value="agenda">
           {loading ? (
-            <div className="space-y-6">{[1, 2, 3].map(i => (<div key={i}><Skeleton className="h-6 w-32 mb-3" /><Skeleton className="h-48 rounded-xl" /></div>))}</div>
+            <LoadingSkeleton variant="card" count={3} />
           ) : (
             <div className="space-y-5">
               {groupedByDay.map((day, index) => (
@@ -215,13 +216,13 @@ const Proximos = () => {
 
         <TabsContent value="tarefas">
           {tasksLoading ? (
-            <div className="space-y-6">{[1, 2, 3].map(i => (<div key={i}><Skeleton className="h-6 w-32 mb-3" /><Skeleton className="h-16 rounded-xl" /></div>))}</div>
+            <LoadingSkeleton variant="list" count={3} />
           ) : !tasks || tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <ListTodo className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p className="text-sm font-medium">Nenhuma tarefa pendente</p>
-              <p className="text-xs">Crie tarefas nos perfis dos leads</p>
-            </div>
+            <EmptyState
+              icon={ListTodo}
+              title="Nenhuma tarefa pendente"
+              description="Crie tarefas nos perfis dos leads."
+            />
           ) : (
             <div className="space-y-5">
               {tasksByDay.map((day, index) => (

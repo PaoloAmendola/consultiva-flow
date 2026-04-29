@@ -1,87 +1,92 @@
 
+# Auditoria + Plano de Correção e Melhorias
 
-# Refatoração Arquitetural e Refinamento de UX
+## ✅ O que JÁ foi feito (do plano original)
 
-## Diagnóstico
+| Item | Status | Evidência |
+|------|--------|-----------|
+| Camada de domínio `src/domain/` | ✅ Completo | `nba-rules.ts`, `nba-engine.ts`, `stage-transitions.ts`, `lead-scoring.ts` |
+| Regras NBA declarativas | ✅ Completo | Array `NBA_RULES` em `nba-rules.ts` |
+| Testes unitários do domain | ✅ Completo | 3 arquivos em `src/domain/__tests__/` |
+| `EmptyState` / `ErrorState` / `LoadingSkeleton` | ✅ Criados | `src/components/ui/` |
+| `useLeads` aponta para domain | ✅ Completo | importa de `@/domain/nba-engine` |
+| `Index.handleMarkDone` extraído | ✅ Completo | usa `getDefaultNextAction()` |
+| `lib/nba-engine.ts` deprecado | ✅ Re-export apenas |
+| Score operacional no card | ✅ Mini-barra + número visíveis |
+| Features extras (fora do escopo original) | ✅ Dashboard `/gerencial`, `/playbooks`, AI analytics, sales-coach com playbooks |
 
-A análise confirma os pontos levantados:
+## ⚠️ Pendências e inconsistências encontradas
 
-1. **Lógica de domínio já parcialmente centralizada** em `src/lib/nba-engine.ts` e `src/types/database.ts` (STAGE_GUIDANCE, ACENDER_STAGES, mapLegacyStage). Porém, regras de decisão ainda vazam para componentes (ex: `handleMarkDone` em `Index.tsx` hardcoda "amanhã 9h" como próxima ação).
+### 1. Visual dos cards — plano cumprido pela METADE
+- `index.css` ainda mantém classes `action-card-urgent/warning/normal` (linhas 132-142).
+- `LeadCard.tsx` (linhas 38-40, 65) **ainda aplica essas classes** via `priorityClass`.
+- O dot de prioridade já existe (linhas 71-77), mas a "remoção da borda lateral pesada" do plano nunca foi feita — apenas trocada por `ring`. O resultado é OK, mas há **redundância visual**: dot + ring + badge P1 + barra de score, tudo competindo. Plano pedia algo mais sutil.
 
-2. **NBA imperativo via switch/case** -- funciona, mas dificulta testes e extensão.
+### 2. Testes — base existe mas há lacunas
+- `src/test/example.test.ts` ainda é o stub `expect(true).toBe(true)` — deve ser removido.
+- Não há testes para `lead-scoring.ts` apesar do arquivo de domínio existir.
+- Nenhum teste de componente (LeadCard, EmptyState, etc).
 
-3. **Zero testes reais** -- `example.test.ts` contém apenas um stub `expect(true).toBe(true)`.
+### 3. Páginas usando Skeleton bruto em vez de `LoadingSkeleton`
+- `Clientes.tsx` (linhas 292-293): usa `<Skeleton>` direto.
+- `Proximos.tsx` (linhas 184, 218): blocos manuais de Skeleton.
+- `LeadProfile.tsx` (linhas 79-80, 320): Skeletons soltos.
+- Todos deveriam usar `LoadingSkeleton variant="..."`.
 
-4. **Cards com `border-l-4` pesado** -- `action-card-urgent`, `action-card-warning`, `action-card-normal` criam ruído visual.
+### 4. ErrorState com `window.location.reload()` em vez de `refetch`
+- `Trilhas.tsx`, `Assets.tsx`, `Clientes.tsx`, `Leads.tsx`, `Proximos.tsx` recarregam a página inteira em erro. Apenas `Index.tsx` e `Gerencial.tsx` usam `refetch()`. Recarregar perde estado/UX.
 
-5. **Sem loading/empty/error states padronizados** -- cada página implementa ad-hoc.
+### 5. `useLeads.ts` aceita filtro `priority` mas a query Supabase aplica em coluna que pode não ter índice — risco de scan sequencial em volumes altos. Não é bug, é nota.
+
+### 6. EmptyState não usado em todas as páginas
+- `Leads.tsx`, `Clientes.tsx`, `Trilhas.tsx`, `Assets.tsx`, `Proximos.tsx` provavelmente têm renderização ad-hoc para "lista vazia" — preciso confirmar e padronizar.
+
+### 7. Lógica de negócio ainda dispersa
+- `LeadCard.tsx` faz `mapLegacyStage`, `STAGE_GUIDANCE[...]`, `buildLeadContext` e `calculateLeadScore` no próprio render — deveria receber pronto via `EnrichedLead` ou um hook `useLeadEnrichment`. O plano pediu "remover lógica de resolução de stage/guidance — receber já resolvido via props ou hook" e isso **não foi feito**.
+
+### 8. `useScripts(resolvedStage)` chamado dentro de cada `LeadCard` — N+1 de queries em listas grandes. Deve ser movido para o nível da lista (hook único) e passado para baixo.
+
+### 9. Acessibilidade do BottomNav
+- `nav-item` está em CSS mas o `<Link>` deveria ter `aria-label` mais descritivo em alguns ícones; OK parcial.
+
+### 10. Edge function `sales-coach` consulta playbook, mas não há fallback claro em UI quando playbook não existe — `useSalesCoach` precisa ser verificado.
 
 ---
 
-## Plano de Implementação
+## 🔧 Plano de Correção
 
-### 1. Criar camada de domínio `src/domain/`
+### Fase 1 — Limpar visual dos cards (alinhar com plano original)
+- Em `src/index.css`: remover `.action-card-warning` e `.action-card-normal` (manter só `.action-card` e `.action-card-urgent` com `ring` sutil).
+- Em `LeadCard.tsx`: 
+  - Remover variável `priorityClass`; aplicar `ring-1 ring-destructive/30` apenas para P1.
+  - Remover badge "P1/P2/P3" redundante (o dot + ring já comunicam) — manter só o dot e a mini-barra de score.
+  - Compactar header: dot + nome + stage badge em uma linha; score discreto à direita.
 
-Mover regras puras para funções testáveis:
+### Fase 2 — Padronizar estados em todas as páginas
+- Substituir Skeletons soltos por `<LoadingSkeleton variant="..." />` em:
+  - `Clientes.tsx`, `Proximos.tsx`, `LeadProfile.tsx`.
+- Trocar `window.location.reload()` por `refetch()` (e expor `refetch` do hook quando faltar) em:
+  - `Trilhas.tsx`, `Assets.tsx`, `Clientes.tsx`, `Leads.tsx`, `Proximos.tsx`.
+- Adicionar `<EmptyState>` consistente onde houver "nenhum X encontrado" ad-hoc nas mesmas páginas.
 
-- **`src/domain/nba-rules.ts`** -- Transformar o switch/case em array declarativo de regras:
-```text
-interface NBARule {
-  stage: string | '*';
-  condition: (ctx: LeadContext) => boolean;
-  priority: LeadPriority;
-  action: ActionType;
-  messageTemplate: string;
-  assetCode?: string;
-  overdueReason: string;
-}
-```
-Cada regra é um objeto puro. O engine itera, aplica a primeira que "match" (ou todas com merge de prioridade). Facilita adicionar regras sem tocar em lógica.
+### Fase 3 — Extrair lógica do LeadCard
+- Criar `src/hooks/useLeadEnrichment.ts` que recebe lead e retorna `{ stage, guidance, score, scripts }`. 
+- Mover N+1 de `useScripts` para nível superior: novo hook `useScriptsByStages(stages: string[])` chamado uma vez no container (Index/Proximos/Leads), distribuindo via prop.
+- `LeadCard` passa a ser apresentacional puro.
 
-- **`src/domain/nba-engine.ts`** -- Refatorar `calculateNBA` para consumir a matriz de regras.
+### Fase 4 — Limpar testes
+- Deletar `src/test/example.test.ts`.
+- Criar `src/domain/__tests__/lead-scoring.test.ts` cobrindo: urgência 0 quando não overdue, potencial cresce com stage, delay capa em 168h, total ponderado.
+- Adicionar 1 teste de smoke para `LeadCard` (renderiza nome + score).
 
-- **`src/domain/stage-transitions.ts`** -- Extrair lógica de avanço de etapa, conversão lead-para-cliente, e a regra de "próxima ação padrão ao concluir" (hoje hardcoded em Index.tsx).
+### Fase 5 — Pequenas melhorias operacionais
+- `useSalesCoach`: garantir mensagem clara quando playbook não existe ("Usando roteiro padrão ACENDER").
+- BottomNav: 5 itens hoje (Agora, Leads, Clientes, Gerencial, Playbooks) — verificar se cabe bem em 360px; se apertado, agrupar Gerencial+Playbooks em "Mais" com sheet.
+- Garantir `refetch` exposto em todos os hooks de listagem (já vem do React Query, só usar nas páginas).
 
-- **`src/domain/lead-scoring.ts`** -- Criar score operacional composto: `urgência` (overdue hours), `potencial` (stage proximity to close), `atraso` (days without touch), `proximaAcao` (hours until next action). Retorna um objeto `LeadScore` numérico.
-
-- Manter `src/types/database.ts` como está (tipos + constantes de config).
-- Deprecar `src/lib/nba-engine.ts` (redirecionar imports).
-
-### 2. Testes unitários para o motor NBA
-
-- **`src/domain/__tests__/nba-rules.test.ts`** -- Testar cada regra individualmente com leads mock.
-- **`src/domain/__tests__/nba-engine.test.ts`** -- Testar `calculateNBA` end-to-end: lead novo sem contato = P1, lead com ação vencida = P1, lead em nutrição sem toque 48h = P2, etc.
-- **`src/domain/__tests__/stage-transitions.test.ts`** -- Testar conversão, avanço, e geração de próxima ação padrão.
-
-### 3. Redesenhar cards visuais (menos ruído)
-
-Substituir `border-l-4` por sistema mais sutil:
-
-- **Remover** classes `action-card-urgent/warning/normal` com borda lateral.
-- **Adicionar** um "status dot" (bolinha 8px) + badge de prioridade discreta no canto.
-- Cards P1 ganham apenas um sutil `ring-1 ring-destructive/30` ao invés de borda pesada.
-- Manter hierarquia tipográfica: nome em `font-semibold`, motivo em `text-xs text-muted`, ação em destaque.
-- Resultado: visual mais limpo, premium, sem perder a informação de urgência.
-
-### 4. Componentes de estado padrão
-
-Criar 3 componentes reutilizáveis em `src/components/ui/`:
-
-- **`EmptyState.tsx`** -- Ícone + título + subtítulo + CTA opcional. Usado quando lista retorna vazia.
-- **`ErrorState.tsx`** -- Ícone de erro + mensagem + botão "Tentar novamente".
-- **`LoadingSkeleton.tsx`** -- Composição de skeletons para cards, listas e grids. Parametrizável por `variant: 'card' | 'list' | 'grid'`.
-
-Aplicar em todas as páginas (Index, Proximos, Leads, Clientes, Assets, Trilhas) substituindo implementações ad-hoc.
-
-### 5. Extrair lógica de negócio dos componentes
-
-- `Index.tsx` `handleMarkDone`: mover regra de "próxima ação padrão" para `domain/stage-transitions.ts`.
-- `LeadCard.tsx`: remover lógica de resolução de stage/guidance -- receber já resolvido via props ou hook.
-- `useLeads.ts`: manter como orquestrador (fetch + enrich), mas o enrich vem do domain.
-
-### 6. Score operacional visível no card
-
-Adicionar ao `LeadCard` um indicador compacto mostrando o score composto (0-100) como mini-barra ou número. Permite ao vendedor priorizar "de relance" sem ler todos os detalhes.
+### Fase 6 — QA manual no preview
+- Login → percorrer Agora, Leads, Clientes, Gerencial, Playbooks no viewport mobile.
+- Validar: estados vazio/erro/loading consistentes, cards menos ruidosos, sem reload em erro.
 
 ---
 
@@ -89,33 +94,23 @@ Adicionar ao `LeadCard` um indicador compacto mostrando o score composto (0-100)
 
 | Ação | Arquivo |
 |------|---------|
-| Criar | `src/domain/nba-rules.ts` |
-| Criar | `src/domain/nba-engine.ts` |
-| Criar | `src/domain/stage-transitions.ts` |
-| Criar | `src/domain/lead-scoring.ts` |
-| Criar | `src/domain/__tests__/nba-rules.test.ts` |
-| Criar | `src/domain/__tests__/nba-engine.test.ts` |
-| Criar | `src/domain/__tests__/stage-transitions.test.ts` |
-| Criar | `src/components/ui/EmptyState.tsx` |
-| Criar | `src/components/ui/ErrorState.tsx` |
-| Criar | `src/components/ui/LoadingSkeleton.tsx` |
-| Modificar | `src/index.css` (remover border-l-4, adicionar dot/ring) |
-| Modificar | `src/components/leads/LeadCard.tsx` (novo visual + score) |
-| Modificar | `src/pages/Index.tsx` (extrair lógica, usar estados padrão) |
-| Modificar | `src/pages/Proximos.tsx` (usar estados padrão) |
-| Modificar | `src/pages/Leads.tsx` (usar estados padrão) |
-| Modificar | `src/pages/Clientes.tsx` (usar estados padrão) |
-| Modificar | `src/pages/Assets.tsx` (usar estados padrão) |
-| Modificar | `src/pages/Trilhas.tsx` (usar estados padrão) |
-| Modificar | `src/hooks/useLeads.ts` (apontar para novo domain) |
-| Deprecar | `src/lib/nba-engine.ts` (re-export do domain) |
+| Modificar | `src/index.css` (remover classes warning/normal) |
+| Modificar | `src/components/leads/LeadCard.tsx` (visual + extrair lógica) |
+| Criar | `src/hooks/useLeadEnrichment.ts` |
+| Criar | `src/hooks/useScriptsByStages.ts` (ou estender `useScripts`) |
+| Modificar | `src/pages/Clientes.tsx` (LoadingSkeleton + refetch + EmptyState) |
+| Modificar | `src/pages/Proximos.tsx` (idem) |
+| Modificar | `src/pages/Leads.tsx` (refetch + EmptyState) |
+| Modificar | `src/pages/Trilhas.tsx` (refetch) |
+| Modificar | `src/pages/Assets.tsx` (refetch) |
+| Modificar | `src/pages/LeadProfile.tsx` (LoadingSkeleton) |
+| Deletar | `src/test/example.test.ts` |
+| Criar | `src/domain/__tests__/lead-scoring.test.ts` |
+| Modificar | `src/components/leads/SalesCoachCard.tsx` (label fallback playbook) |
 
 ---
 
-## O que NÃO está neste escopo
-
-- Instrumentação de analytics da IA (próximo passo separado)
-- Playbooks comerciais por perfil (feature futura)
-- Dashboard gerencial com gargalos (feature futura)
-- Mudanças no banco de dados (nenhuma necessária)
-
+## Fora de escopo
+- Mudanças no schema do banco.
+- Novas features (nenhuma); apenas consolidação/correção.
+- Refatoração de KanbanBoard / LeadListView (próxima onda).

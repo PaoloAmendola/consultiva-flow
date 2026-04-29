@@ -6,12 +6,12 @@ import { AssetFormModal } from '@/components/assets/AssetFormModal';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Search, FileText, Video, Image, Link as LinkIcon, Headphones, ExternalLink, Copy, Package, Plus, Pencil, Trash2 } from 'lucide-react';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DbAsset } from '@/types/database';
@@ -28,7 +28,7 @@ const Assets = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [audienceFilter, setAudienceFilter] = useState<string | null>(null);
-  const { data: assets, isLoading, error } = useAssets();
+  const { data: assets, isLoading, error, refetch } = useAssets();
 
   // Mutations
   const createAsset = useCreateAsset();
@@ -68,7 +68,7 @@ const Assets = () => {
   if (error) {
     return (
       <DashboardLayout title="Assets" subtitle="Erro ao carregar">
-        <ErrorState onRetry={() => window.location.reload()} />
+        <ErrorState onRetry={() => refetch()} />
       </DashboardLayout>
     );
   }
@@ -116,13 +116,18 @@ const Assets = () => {
       {isLoading ? (
         <LoadingSkeleton variant="grid" count={6} />
       ) : filteredAssets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum material encontrado</h3>
-          <p className="text-sm text-muted-foreground">
-            {searchQuery || typeFilter || audienceFilter ? 'Tente outro termo ou ajuste os filtros' : 'Nenhum asset cadastrado'}
-          </p>
-        </div>
+        <EmptyState
+          icon={Package}
+          title="Nenhum material encontrado"
+          description={searchQuery || typeFilter || audienceFilter ? 'Tente outro termo ou ajuste os filtros' : 'Cadastre seu primeiro asset para começar.'}
+          action={
+            !(searchQuery || typeFilter || audienceFilter) && (
+              <Button onClick={openCreate} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Novo Asset
+              </Button>
+            )
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredAssets.map(asset => {

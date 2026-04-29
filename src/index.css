@@ -130,15 +130,7 @@
   }
 
   .action-card-urgent {
-    @apply ring-1 ring-destructive/30;
-  }
-
-  .action-card-warning {
-    @apply ring-1 ring-warning/20;
-  }
-
-  .action-card-normal {
-    /* no extra decoration for normal priority */
+    @apply ring-1 ring-destructive/40;
   }
 
   /* Touch-friendly buttons */
