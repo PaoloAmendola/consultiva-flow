@@ -1,116 +1,190 @@
+# Estado Atual do App — Auditoria & Roadmap
 
-# Auditoria + Plano de Correção e Melhorias
-
-## ✅ O que JÁ foi feito (do plano original)
-
-| Item | Status | Evidência |
-|------|--------|-----------|
-| Camada de domínio `src/domain/` | ✅ Completo | `nba-rules.ts`, `nba-engine.ts`, `stage-transitions.ts`, `lead-scoring.ts` |
-| Regras NBA declarativas | ✅ Completo | Array `NBA_RULES` em `nba-rules.ts` |
-| Testes unitários do domain | ✅ Completo | 3 arquivos em `src/domain/__tests__/` |
-| `EmptyState` / `ErrorState` / `LoadingSkeleton` | ✅ Criados | `src/components/ui/` |
-| `useLeads` aponta para domain | ✅ Completo | importa de `@/domain/nba-engine` |
-| `Index.handleMarkDone` extraído | ✅ Completo | usa `getDefaultNextAction()` |
-| `lib/nba-engine.ts` deprecado | ✅ Re-export apenas |
-| Score operacional no card | ✅ Mini-barra + número visíveis |
-| Features extras (fora do escopo original) | ✅ Dashboard `/gerencial`, `/playbooks`, AI analytics, sales-coach com playbooks |
-
-## ⚠️ Pendências e inconsistências encontradas
-
-### 1. Visual dos cards — plano cumprido pela METADE
-- `index.css` ainda mantém classes `action-card-urgent/warning/normal` (linhas 132-142).
-- `LeadCard.tsx` (linhas 38-40, 65) **ainda aplica essas classes** via `priorityClass`.
-- O dot de prioridade já existe (linhas 71-77), mas a "remoção da borda lateral pesada" do plano nunca foi feita — apenas trocada por `ring`. O resultado é OK, mas há **redundância visual**: dot + ring + badge P1 + barra de score, tudo competindo. Plano pedia algo mais sutil.
-
-### 2. Testes — base existe mas há lacunas
-- `src/test/example.test.ts` ainda é o stub `expect(true).toBe(true)` — deve ser removido.
-- Não há testes para `lead-scoring.ts` apesar do arquivo de domínio existir.
-- Nenhum teste de componente (LeadCard, EmptyState, etc).
-
-### 3. Páginas usando Skeleton bruto em vez de `LoadingSkeleton`
-- `Clientes.tsx` (linhas 292-293): usa `<Skeleton>` direto.
-- `Proximos.tsx` (linhas 184, 218): blocos manuais de Skeleton.
-- `LeadProfile.tsx` (linhas 79-80, 320): Skeletons soltos.
-- Todos deveriam usar `LoadingSkeleton variant="..."`.
-
-### 4. ErrorState com `window.location.reload()` em vez de `refetch`
-- `Trilhas.tsx`, `Assets.tsx`, `Clientes.tsx`, `Leads.tsx`, `Proximos.tsx` recarregam a página inteira em erro. Apenas `Index.tsx` e `Gerencial.tsx` usam `refetch()`. Recarregar perde estado/UX.
-
-### 5. `useLeads.ts` aceita filtro `priority` mas a query Supabase aplica em coluna que pode não ter índice — risco de scan sequencial em volumes altos. Não é bug, é nota.
-
-### 6. EmptyState não usado em todas as páginas
-- `Leads.tsx`, `Clientes.tsx`, `Trilhas.tsx`, `Assets.tsx`, `Proximos.tsx` provavelmente têm renderização ad-hoc para "lista vazia" — preciso confirmar e padronizar.
-
-### 7. Lógica de negócio ainda dispersa
-- `LeadCard.tsx` faz `mapLegacyStage`, `STAGE_GUIDANCE[...]`, `buildLeadContext` e `calculateLeadScore` no próprio render — deveria receber pronto via `EnrichedLead` ou um hook `useLeadEnrichment`. O plano pediu "remover lógica de resolução de stage/guidance — receber já resolvido via props ou hook" e isso **não foi feito**.
-
-### 8. `useScripts(resolvedStage)` chamado dentro de cada `LeadCard` — N+1 de queries em listas grandes. Deve ser movido para o nível da lista (hook único) e passado para baixo.
-
-### 9. Acessibilidade do BottomNav
-- `nav-item` está em CSS mas o `<Link>` deveria ter `aria-label` mais descritivo em alguns ícones; OK parcial.
-
-### 10. Edge function `sales-coach` consulta playbook, mas não há fallback claro em UI quando playbook não existe — `useSalesCoach` precisa ser verificado.
+_Última atualização: 2026-04-29_
 
 ---
 
-## 🔧 Plano de Correção
+## 🎯 Visão Geral
 
-### Fase 1 — Limpar visual dos cards (alinhar com plano original)
-- Em `src/index.css`: remover `.action-card-warning` e `.action-card-normal` (manter só `.action-card` e `.action-card-urgent` com `ring` sutil).
-- Em `LeadCard.tsx`: 
-  - Remover variável `priorityClass`; aplicar `ring-1 ring-destructive/30` apenas para P1.
-  - Remover badge "P1/P2/P3" redundante (o dot + ring já comunicam) — manter só o dot e a mini-barra de score.
-  - Compactar header: dot + nome + stage badge em uma linha; score discreto à direita.
+**Sales CRM B2B mobile-first** baseado na metodologia **ACENDER®** (Atração → Conexão → Enquadramento → Nutrição → Demonstração → Encerramento → Recorrência), com assistente de vendas via Lovable AI Gateway, playbooks por etapa/perfil, trilhas de nutrição automatizadas e dashboard gerencial.
 
-### Fase 2 — Padronizar estados em todas as páginas
-- Substituir Skeletons soltos por `<LoadingSkeleton variant="..." />` em:
-  - `Clientes.tsx`, `Proximos.tsx`, `LeadProfile.tsx`.
-- Trocar `window.location.reload()` por `refetch()` (e expor `refetch` do hook quando faltar) em:
-  - `Trilhas.tsx`, `Assets.tsx`, `Clientes.tsx`, `Leads.tsx`, `Proximos.tsx`.
-- Adicionar `<EmptyState>` consistente onde houver "nenhum X encontrado" ad-hoc nas mesmas páginas.
-
-### Fase 3 — Extrair lógica do LeadCard
-- Criar `src/hooks/useLeadEnrichment.ts` que recebe lead e retorna `{ stage, guidance, score, scripts }`. 
-- Mover N+1 de `useScripts` para nível superior: novo hook `useScriptsByStages(stages: string[])` chamado uma vez no container (Index/Proximos/Leads), distribuindo via prop.
-- `LeadCard` passa a ser apresentacional puro.
-
-### Fase 4 — Limpar testes
-- Deletar `src/test/example.test.ts`.
-- Criar `src/domain/__tests__/lead-scoring.test.ts` cobrindo: urgência 0 quando não overdue, potencial cresce com stage, delay capa em 168h, total ponderado.
-- Adicionar 1 teste de smoke para `LeadCard` (renderiza nome + score).
-
-### Fase 5 — Pequenas melhorias operacionais
-- `useSalesCoach`: garantir mensagem clara quando playbook não existe ("Usando roteiro padrão ACENDER").
-- BottomNav: 5 itens hoje (Agora, Leads, Clientes, Gerencial, Playbooks) — verificar se cabe bem em 360px; se apertado, agrupar Gerencial+Playbooks em "Mais" com sheet.
-- Garantir `refetch` exposto em todos os hooks de listagem (já vem do React Query, só usar nas páginas).
-
-### Fase 6 — QA manual no preview
-- Login → percorrer Agora, Leads, Clientes, Gerencial, Playbooks no viewport mobile.
-- Validar: estados vazio/erro/loading consistentes, cards menos ruidosos, sem reload em erro.
+- Stack: React 18 + Vite + TS + Tailwind + shadcn + TanStack Query + Lovable Cloud (Supabase) + Lovable AI (Gemini).
+- Arquitetura: camada de domínio centralizada em `src/domain/` (NBA engine declarativo, scoring, transições de estágio) com 25 testes passando.
+- Deploy: Vercel.
 
 ---
 
-## Arquivos afetados
+## ✅ Funcionalidades Operacionais
 
-| Ação | Arquivo |
-|------|---------|
-| Modificar | `src/index.css` (remover classes warning/normal) |
-| Modificar | `src/components/leads/LeadCard.tsx` (visual + extrair lógica) |
-| Criar | `src/hooks/useLeadEnrichment.ts` |
-| Criar | `src/hooks/useScriptsByStages.ts` (ou estender `useScripts`) |
-| Modificar | `src/pages/Clientes.tsx` (LoadingSkeleton + refetch + EmptyState) |
-| Modificar | `src/pages/Proximos.tsx` (idem) |
-| Modificar | `src/pages/Leads.tsx` (refetch + EmptyState) |
-| Modificar | `src/pages/Trilhas.tsx` (refetch) |
-| Modificar | `src/pages/Assets.tsx` (refetch) |
-| Modificar | `src/pages/LeadProfile.tsx` (LoadingSkeleton) |
-| Deletar | `src/test/example.test.ts` |
-| Criar | `src/domain/__tests__/lead-scoring.test.ts` |
-| Modificar | `src/components/leads/SalesCoachCard.tsx` (label fallback playbook) |
+### Autenticação & Acesso
+- ✅ Login/cadastro com email + senha (`/auth`)
+- ✅ Rotas protegidas (`ProtectedRoute`)
+- ✅ Tabela `user_roles` separada (admin/user) com `has_role()` security definer
+- ✅ RLS em todas tabelas (multi-tenant por `user_id` ou somente-leitura para catálogos)
+
+### Pipeline de Leads
+- ✅ CRUD completo de leads (criar, editar, listar, deletar)
+- ✅ Kanban (desktop) + Tabs/Pills (mobile) por etapa ACENDER
+- ✅ Filtros por origem, canal, prioridade, tipo
+- ✅ Score operacional 0–100 (urgência + potencial + delay) com mini-barra no card
+- ✅ Importação/Exportação CSV (UTF-8 BOM)
+- ✅ Triagem obrigatória (origem + canal) e desqualificação automática B2C
+- ✅ Histórico automático de mudanças de etapa na timeline
+
+### Próxima Melhor Ação (NBA)
+- ✅ Engine declarativo (`src/domain/nba-rules.ts`) — 9 regras (7 stage-specific + 2 cross-stage)
+- ✅ Cada lead sempre tem `next_action_type` + `next_action_at`
+- ✅ Reordenação dinâmica do Inbox por overdue/today
+- ✅ Quick action "Adiar 2h"
+
+### Assistente de IA (Sales Coach)
+- ✅ Edge function `sales-coach` com Gemini-1.5-flash via Lovable AI Gateway
+- ✅ Grounding em playbooks da etapa+perfil do lead
+- ✅ Card no perfil do lead + dica rápida na lista
+- ✅ Tracking analytics: `displayed`, `accepted`, `ignored`, canal sugerido vs usado (`ai_analytics`)
+
+### Playbooks Comerciais
+- ✅ Tabela `playbooks` populada com **14 entradas** (7 etapas × 2 perfis: PROFISSIONAL/DISTRIBUIDOR)
+- ✅ Editor admin em `/playbooks` (CRUD com objetivos, scripts, perguntas, objeções, critérios)
+- ✅ Acessível a todos para leitura; somente admins editam
+
+### Trilhas de Nutrição
+- ✅ Tabela `nurture_tracks` populada com **7 trilhas** (T1–T7)
+- ✅ Editor admin em `/trilhas` (passos com dia, ação, mensagem, asset)
+- ✅ Atribuição automática a leads conforme etapa
+
+### Assets / Materiais
+- ✅ Tabela `assets` populada com **9 itens** (A1–A6 profissional, B1–B3 distribuidor)
+- ✅ Página `/assets` com filtro por tipo de lead
+- ✅ Códigos vinculados em scripts e trilhas
+
+### Scripts ACENDER
+- ✅ **40 scripts** populados, mapeados por etapa, com variável `{nome}`
+
+### Pós-Venda / LTV
+- ✅ Etapa Recorrência com substages D+2 → D+90
+- ✅ Conversão automática Encerramento → Recorrência
+- ✅ Tabela `client_orders` para registro de pedidos e cálculo de LTV
+- ✅ Página `/clientes` com dashboard, alertas de churn (>14 dias), evolução de pedidos, funil de substages
+
+### Dashboard Gerencial (`/gerencial`)
+- ✅ Gargalos por etapa, taxa de resposta por canal, aging por lead, performance por segmento
+- ✅ Métricas de IA: aceitação vs ignorados
+
+### UX / Design System
+- ✅ Tokens semânticos HSL em `index.css`
+- ✅ Componentes padrão `EmptyState`, `ErrorState`, `LoadingSkeleton` aplicados em todas páginas
+- ✅ `refetch()` do TanStack Query (sem `window.location.reload`)
+- ✅ Cards com status dot + ring sutil para P1 (sem bordas pesadas)
+- ✅ Mobile-first com BottomNav; layout adaptativo
+- ✅ Dark theme premium minimal
+- ✅ Acessibilidade: 48px touch targets, aria-labels
+
+### Offline & Sync
+- ✅ Estratégia offline-first com IndexedDB (sync queue)
+- ✅ Mapeamento `notion_page_id` para sincronização externa
 
 ---
 
-## Fora de escopo
-- Mudanças no schema do banco.
-- Novas features (nenhuma); apenas consolidação/correção.
-- Refatoração de KanbanBoard / LeadListView (próxima onda).
+## ⚠️ Erros & Pontos de Atenção Conhecidos
+
+| # | Item | Severidade | Observação |
+|---|------|-----------|------------|
+| 1 | Console logs do preview vazios no momento da auditoria | ✅ OK | Sem erros runtime detectados |
+| 2 | `LeadCard` ainda chama `useScripts(stage)` por card (potencial N+1) | 🟡 Médio | Mitigado pelo cache do TanStack Query, mas ideal extrair para `useScriptsByStages` no nível do container |
+| 3 | `useLeadEnrichment` planejado mas não criado | 🟡 Baixo | Lógica `mapLegacyStage`/`STAGE_GUIDANCE`/`buildLeadContext` ainda no render do `LeadCard` |
+| 4 | `client_orders` está vazia (0 registros) | 🟢 Esperado | Aguardando primeiros pedidos reais |
+| 5 | Nenhum teste de componente (apenas domain) | 🟡 Baixo | 25 testes de domínio passam; falta smoke test de UI |
+| 6 | Filtro `priority` em `useLeads` sem índice dedicado | 🟢 Baixo | Sem impacto no volume atual |
+| 7 | `useSalesCoach` não exibe label visual quando playbook custom é usado vs fallback ACENDER | 🟡 Baixo | Funciona, mas usuário não sabe a fonte |
+
+**Nenhum bug bloqueante identificado.** O app está operável end-to-end.
+
+---
+
+## 🗄️ Banco vs Interface — Recomendação
+
+**Pergunta:** popular banco com trilhas/assets/playbooks ou manter na interface?
+
+**Resposta: já está populado no banco e essa é a abordagem correta. Manter assim.**
+
+| Critério | Banco (atual) | Interface hardcoded |
+|----------|---------------|---------------------|
+| Edição sem deploy | ✅ Admin pode editar via `/playbooks`, `/trilhas`, `/assets` | ❌ Requer code change |
+| RLS / multi-tenant | ✅ Controlado por role | ❌ N/A |
+| Versionamento de conteúdo | ✅ `updated_at` automático | 🟡 Via git |
+| Backup automatizado | ✅ Lovable Cloud | ❌ Manual |
+| Personalização por usuário admin | ✅ Sim | ❌ Não |
+| Ground truth para IA | ✅ Edge function consulta direto | 🟡 Bundled na função |
+
+**Estado atual confirmado por query:**
+- `playbooks`: **14** (cobertura 100% — 7 etapas × 2 perfis)
+- `nurture_tracks`: **7** (T1–T7)
+- `assets`: **9** (A1–A6 + B1–B3)
+- `scripts`: **40**
+
+**Ação recomendada:** **nenhuma migração nova**. Apenas garantir que novos admins saibam usar os editores `/playbooks` e `/trilhas`. Se desejar, criar onboarding admin documentando como customizar.
+
+---
+
+## 🚀 Melhorias Sugeridas (Próximas Ondas)
+
+### Curto prazo (1–2 dias)
+1. **Extrair `useLeadEnrichment` hook** — desacoplar lógica do `LeadCard`, deixá-lo apresentacional puro
+2. **`useScriptsByStages` (batch)** — eliminar N+1 em listas grandes
+3. **Badge no SalesCoachCard** — indicar "Playbook customizado" vs "Roteiro padrão ACENDER"
+4. **Smoke tests de UI** — `LeadCard`, `EmptyState`, `BottomNav` (Vitest + Testing Library)
+5. **Onboarding admin** — modal guiado na primeira vez que admin acessa `/playbooks`
+
+### Médio prazo (1 semana)
+6. **A/B testing de playbooks** — versionar variações e medir conversão
+7. **Notificações push (PWA)** — alertar overdue/SLAs via service worker
+8. **Sugestão de próximo asset baseada em comportamento** — IA aprende com `ai_analytics`
+9. **Importação em massa de playbooks via JSON/CSV**
+10. **Histórico completo de versões de playbook** (audit log)
+
+### Longo prazo (visão produto)
+11. **Integração WhatsApp Business API** — enviar mensagens diretamente do CRM
+12. **Análise de sentimento das interações** via Lovable AI
+13. **Forecast de vendas com ML** baseado em `client_orders` + estágio
+14. **Multi-tenant org-level** (hoje é por user_id; permitir times)
+15. **Marketplace de playbooks** — admins compartilham templates entre tenants
+16. **Mobile app nativo** (Capacitor wrapper sobre o PWA atual)
+17. **Webhooks de entrada** — capturar leads de Meta Ads, Google Forms etc. direto no pipeline
+18. **Relatórios PDF exportáveis** do `/gerencial`
+
+---
+
+## 📁 Arquitetura — Mapa Rápido
+
+```
+src/
+  domain/             # Regras de negócio puras (testadas)
+    nba-rules.ts      # 9 regras declarativas ACENDER
+    nba-engine.ts     # Avaliador + enriquecimento
+    lead-scoring.ts   # Score 0–100
+    stage-transitions.ts
+    __tests__/        # 25 testes ✅
+  hooks/              # TanStack Query + Supabase
+  components/
+    ui/               # shadcn + EmptyState/ErrorState/LoadingSkeleton
+    leads/            # LeadCard, SalesCoachCard, KanbanBoard...
+    playbooks/        # PlaybookFormModal
+  pages/              # Index (Agora), Leads, Clientes, Gerencial, Playbooks, Trilhas, Assets
+  lib/
+    nba-engine.ts     # DEPRECATED — re-export do domain
+supabase/
+  functions/sales-coach/  # Edge function com playbook grounding
+  migrations/             # Histórico SQL
+```
+
+---
+
+## 🧪 Saúde Técnica
+
+- ✅ Build: passa
+- ✅ Testes: 25/25 passando
+- ✅ Console preview: sem erros
+- ✅ RLS: ativo em todas as tabelas
+- ✅ Domain layer isolado e testado
+- 🟡 Dívida técnica: hooks de enrichment não extraídos
