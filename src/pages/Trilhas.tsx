@@ -6,16 +6,16 @@ import { TrackFormModal } from '@/components/tracks/TrackFormModal';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { MessageCircle, Phone, Calendar, FileText, Mail, ChevronDown, ChevronUp, Sparkles, Route, Send, Plus, Pencil, Trash2 } from 'lucide-react';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ACTION_TYPE_CONFIG, LeadType, DbNurtureTrack } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 const Trilhas = () => {
-  const { data: tracks, isLoading, error } = useNurtureTracks();
+  const { data: tracks, isLoading, error, refetch } = useNurtureTracks();
   const createTrack = useCreateTrack();
   const updateTrack = useUpdateTrack();
   const deleteTrack = useDeleteTrack();
@@ -55,7 +55,7 @@ const Trilhas = () => {
   if (error) {
     return (
       <DashboardLayout title="Trilhas de Nutrição" subtitle="Erro ao carregar">
-        <ErrorState onRetry={() => window.location.reload()} />
+        <ErrorState onRetry={() => refetch()} />
       </DashboardLayout>
     );
   }
@@ -174,11 +174,16 @@ const Trilhas = () => {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Route className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma trilha cadastrada</h3>
-          <p className="text-sm text-muted-foreground">Clique em "Nova Trilha" para começar</p>
-        </div>
+        <EmptyState
+          icon={Route}
+          title="Nenhuma trilha cadastrada"
+          description='Clique em "Nova Trilha" para começar a montar sequências de nutrição.'
+          action={
+            <Button onClick={openCreate} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Nova Trilha
+            </Button>
+          }
+        />
       )}
 
       {/* Form Modal */}
