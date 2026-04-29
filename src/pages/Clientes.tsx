@@ -120,7 +120,7 @@ const Clientes = () => {
   const [activeSubstage, setActiveSubstage] = useState<string | null>(null);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { data: clients, isLoading, error } = useClientLeads();
+  const { data: clients, isLoading, error, refetch } = useClientLeads();
   const updateLead = useUpdateLead();
   useClientNotifications(clients);
 
@@ -196,7 +196,7 @@ const Clientes = () => {
   if (error) {
     return (
       <DashboardLayout title="Clientes" subtitle="Erro ao carregar">
-        <ErrorState onRetry={() => window.location.reload()} />
+        <ErrorState onRetry={() => refetch()} />
       </DashboardLayout>
     );
   }
@@ -290,15 +290,13 @@ const Clientes = () => {
       {/* Client list */}
       <div className="space-y-2">
         {isLoading ? (
-          [1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)
+          <LoadingSkeleton variant="list" count={3} />
         ) : filteredClients.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Search className="h-10 w-10 text-muted-foreground mb-3" />
-            <h3 className="text-base font-semibold text-foreground mb-1">Nenhum cliente encontrado</h3>
-            <p className="text-sm text-muted-foreground">
-              Leads convertidos aparecerão aqui automaticamente
-            </p>
-          </div>
+          <EmptyState
+            icon={Search}
+            title="Nenhum cliente encontrado"
+            description="Leads convertidos aparecerão aqui automaticamente"
+          />
         ) : (
           filteredClients.map(client => {
             const currentSubIdx = getSubstageIndex(client.substatus);
