@@ -149,9 +149,20 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
     <Card className="border-primary/20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2 flex-wrap">
             <Sparkles className="h-4 w-4 text-primary" />
             Assistente de Vendas
+            {recommendations.playbook_source && (
+              <Badge
+                variant={recommendations.playbook_source === 'custom' ? 'default' : 'outline'}
+                className="text-[10px] font-normal"
+                title={recommendations.playbook_source === 'custom'
+                  ? 'Sugestão baseada em playbook customizado da sua equipe'
+                  : 'Sugestão baseada no roteiro padrão ACENDER®'}
+              >
+                {recommendations.playbook_source === 'custom' ? 'Playbook customizado' : 'Roteiro ACENDER padrão'}
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge className={cn("text-xs", urgencyConfig[recommendations.urgency]?.color)}>

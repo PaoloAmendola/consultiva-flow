@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { usePlaybooks, type Playbook } from '@/hooks/usePlaybooks';
 import { useDeletePlaybook } from '@/hooks/usePlaybookMutations';
@@ -14,20 +14,41 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
-import { BookOpen, Target, HelpCircle, MessageSquare, Shield, CheckCircle, ArrowRight, Plus, Pencil, Trash2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import { BookOpen, Target, HelpCircle, MessageSquare, Shield, CheckCircle, ArrowRight, Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { ACENDER_STAGES, STAGE_GUIDANCE } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { PlaybookFormModal } from '@/components/playbooks/PlaybookFormModal';
+
+const ONBOARDING_KEY = 'playbooks_onboarding_seen_v1';
 
 const Playbooks = () => {
   const [selectedType, setSelectedType] = useState('PROFISSIONAL');
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Playbook | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const { data: playbooks, isLoading } = usePlaybooks(undefined, selectedType);
   const isAdmin = useIsAdmin();
   const deletePb = useDeletePlaybook();
 
   const stages = ACENDER_STAGES;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (typeof window === 'undefined') return;
+    if (!localStorage.getItem(ONBOARDING_KEY)) {
+      setOnboardingOpen(true);
+    }
+  }, [isAdmin]);
+
+  const closeOnboarding = () => {
+    setOnboardingOpen(false);
+    setOnboardingStep(0);
+    try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch {}
+  };
 
   const openNew = () => { setEditing(null); setEditorOpen(true); };
   const openEdit = (pb: Playbook) => { setEditing(pb); setEditorOpen(true); };
@@ -107,7 +128,59 @@ const Playbooks = () => {
         onClose={() => setEditorOpen(false)}
         playbook={editing}
       />
+
+      <Dialog open={onboardingOpen} onOpenChange={(o) => !o && closeOnboarding()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              {onboardingStep === 0 && 'O que é um Playbook?'}
+              {onboardingStep === 1 && 'Como a IA usa seus playbooks'}
+              {onboardingStep === 2 && 'Pronto para começar?'}
+            </DialogTitle>
+            <DialogDescription className="pt-2 space-y-2 text-sm">
+              {onboardingStep === 0 && (
+                <span>
+                  Playbooks são roteiros consultivos por etapa do pipeline ACENDER®.
+                  Cada um define <strong>objetivos</strong>, <strong>perguntas-chave</strong>,
+                  <strong> scripts</strong>, <strong>objeções esperadas</strong> e
+                  <strong> critérios de sucesso</strong> para avançar o lead.
+                </span>
+              )}
+              {onboardingStep === 1 && (
+                <span>
+                  O Assistente de Vendas no perfil do lead carrega automaticamente
+                  o playbook da etapa + tipo de lead correspondente e usa como base
+                  para gerar a sugestão de ação. Quando não há playbook customizado,
+                  o roteiro padrão ACENDER® é usado.
+                </span>
+              )}
+              {onboardingStep === 2 && (
+                <span>
+                  Crie seu primeiro playbook customizado para sua equipe ou explore
+                  os roteiros padrão abaixo. Você pode editá-los a qualquer momento.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+            <Button variant="ghost" size="sm" onClick={closeOnboarding}>
+              Pular
+            </Button>
+            {onboardingStep < 2 ? (
+              <Button size="sm" onClick={() => setOnboardingStep(s => s + 1)}>
+                Próximo <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => { closeOnboarding(); openNew(); }}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Criar meu primeiro
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+
   );
 };
 
