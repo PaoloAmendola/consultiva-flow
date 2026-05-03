@@ -28,11 +28,27 @@ const Playbooks = () => {
   const [selectedType, setSelectedType] = useState('PROFISSIONAL');
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Playbook | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
   const { data: playbooks, isLoading } = usePlaybooks(undefined, selectedType);
   const isAdmin = useIsAdmin();
   const deletePb = useDeletePlaybook();
 
   const stages = ACENDER_STAGES;
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (typeof window === 'undefined') return;
+    if (!localStorage.getItem(ONBOARDING_KEY)) {
+      setOnboardingOpen(true);
+    }
+  }, [isAdmin]);
+
+  const closeOnboarding = () => {
+    setOnboardingOpen(false);
+    setOnboardingStep(0);
+    try { localStorage.setItem(ONBOARDING_KEY, '1'); } catch {}
+  };
 
   const openNew = () => { setEditing(null); setEditorOpen(true); };
   const openEdit = (pb: Playbook) => { setEditing(pb); setEditorOpen(true); };
