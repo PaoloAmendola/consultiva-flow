@@ -23,6 +23,8 @@ import {
   AlertTriangle, ListTodo, Target, BarChart3 
 } from 'lucide-react';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { useScriptsByStages } from '@/hooks/useScriptsByStages';
+import { mapLegacyStage } from '@/types/database';
 
 const Proximos = () => {
   const { data: leads, isLoading, error, refetch } = useActiveLeads();
@@ -32,6 +34,14 @@ const Proximos = () => {
   const completeTask = useCompleteTask();
   const cancelTask = useCancelTask();
   const [activeTab, setActiveTab] = useState('agenda');
+
+  // Batch-fetch scripts for all stages currently visible (avoids N+1)
+  const stagesInView = useMemo(
+    () => Array.from(new Set((leads ?? []).map(l => mapLegacyStage(l.stage)))),
+    [leads],
+  );
+  useScriptsByStages(stagesInView);
+
 
   const groupedByDay = useMemo(() => {
     if (!leads) return [];

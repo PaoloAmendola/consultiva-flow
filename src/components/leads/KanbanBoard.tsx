@@ -15,6 +15,8 @@ import {
 } from '@/types/database';
 import { toast } from 'sonner';
 
+import { useScriptsByStages } from '@/hooks/useScriptsByStages';
+
 interface KanbanBoardProps {
   leads: EnrichedLead[];
   searchQuery: string;
@@ -28,6 +30,13 @@ export function KanbanBoard({ leads, searchQuery, filters }: KanbanBoardProps) {
   const dragLeadRef = useRef<EnrichedLead | null>(null);
   const updateLead = useUpdateLead();
   const createStageChange = useCreateStageChangeInteraction();
+
+  // Batch-fetch scripts for all stages in this kanban (avoids N+1)
+  useScriptsByStages(useMemo(
+    () => Array.from(new Set(leads.map(l => mapLegacyStage(l.stage)))),
+    [leads],
+  ));
+
 
   // Group leads by resolved stage, excluding RECORRENCIA
   const groupedLeads = useMemo(() => {
