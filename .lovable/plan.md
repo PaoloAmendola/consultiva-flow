@@ -1,190 +1,94 @@
-# Estado Atual do App — Auditoria & Roadmap
+# Plano de Correções de Curto Prazo
 
-_Última atualização: 2026-04-29_
+Foco: resolver os 5 itens "Curto prazo" da auditoria sem mudanças de banco de dados.
 
----
+## 1. Extrair `useLeadEnrichment`
 
-## 🎯 Visão Geral
+**Novo:** `src/hooks/useLeadEnrichment.ts`
 
-**Sales CRM B2B mobile-first** baseado na metodologia **ACENDER®** (Atração → Conexão → Enquadramento → Nutrição → Demonstração → Encerramento → Recorrência), com assistente de vendas via Lovable AI Gateway, playbooks por etapa/perfil, trilhas de nutrição automatizadas e dashboard gerencial.
+Centraliza o cálculo derivado por lead (hoje espalhado dentro de `LeadCard`):
+- `resolvedStage = mapLegacyStage(lead.stage)`
+- `currentStage` (de `ACENDER_STAGES`)
+- `guidance` (de `STAGE_GUIDANCE`)
+- `score` (via `buildLeadContext` + `calculateLeadScore`)
+- `nextStageLabel`
 
-- Stack: React 18 + Vite + TS + Tailwind + shadcn + TanStack Query + Lovable Cloud (Supabase) + Lovable AI (Gemini).
-- Arquitetura: camada de domínio centralizada em `src/domain/` (NBA engine declarativo, scoring, transições de estágio) com 25 testes passando.
-- Deploy: Vercel.
+Retorna um objeto memoizado por `lead.id + lead.updated_at`.
 
----
+**Modificar:** `src/components/leads/LeadCard.tsx` para consumir o hook e ficar puramente apresentacional (sem importar `nba-engine`, `lead-scoring` ou `mapLegacyStage` direto).
 
-## ✅ Funcionalidades Operacionais
+## 2. `useScriptsByStages` (batch)
 
-### Autenticação & Acesso
-- ✅ Login/cadastro com email + senha (`/auth`)
-- ✅ Rotas protegidas (`ProtectedRoute`)
-- ✅ Tabela `user_roles` separada (admin/user) com `has_role()` security definer
-- ✅ RLS em todas tabelas (multi-tenant por `user_id` ou somente-leitura para catálogos)
+**Novo:** `src/hooks/useScriptsByStages.ts`
 
-### Pipeline de Leads
-- ✅ CRUD completo de leads (criar, editar, listar, deletar)
-- ✅ Kanban (desktop) + Tabs/Pills (mobile) por etapa ACENDER
-- ✅ Filtros por origem, canal, prioridade, tipo
-- ✅ Score operacional 0–100 (urgência + potencial + delay) com mini-barra no card
-- ✅ Importação/Exportação CSV (UTF-8 BOM)
-- ✅ Triagem obrigatória (origem + canal) e desqualificação automática B2C
-- ✅ Histórico automático de mudanças de etapa na timeline
+- Recebe `stages: AcenderStage[]` (deduplicados) e faz **uma única query** `scripts.select().in('stage', stages)`.
+- Retorna `Map<stage, Script[]>` via TanStack Query (cache compartilhado).
+- Mantém `useScripts(stage)` existente como wrapper fino que lê do mesmo cache key, para retrocompatibilidade.
 
-### Próxima Melhor Ação (NBA)
-- ✅ Engine declarativo (`src/domain/nba-rules.ts`) — 9 regras (7 stage-specific + 2 cross-stage)
-- ✅ Cada lead sempre tem `next_action_type` + `next_action_at`
-- ✅ Reordenação dinâmica do Inbox por overdue/today
-- ✅ Quick action "Adiar 2h"
+**Modificar:** containers que renderizam listas de `LeadCard` (`Proximos.tsx`, `Leads.tsx`, `KanbanBoard.tsx`, `LeadListView.tsx`) — pré-carregam `useScriptsByStages` com os stages distintos da lista.
 
-### Assistente de IA (Sales Coach)
-- ✅ Edge function `sales-coach` com Gemini-1.5-flash via Lovable AI Gateway
-- ✅ Grounding em playbooks da etapa+perfil do lead
-- ✅ Card no perfil do lead + dica rápida na lista
-- ✅ Tracking analytics: `displayed`, `accepted`, `ignored`, canal sugerido vs usado (`ai_analytics`)
+**Modificar:** `LeadCard.tsx` — opcionalmente aceita `scripts?: Script[]` via prop; se vier, pula o `useScripts` interno (elimina N+1 de fato; sem prop, mantém comportamento atual).
 
-### Playbooks Comerciais
-- ✅ Tabela `playbooks` populada com **14 entradas** (7 etapas × 2 perfis: PROFISSIONAL/DISTRIBUIDOR)
-- ✅ Editor admin em `/playbooks` (CRUD com objetivos, scripts, perguntas, objeções, critérios)
-- ✅ Acessível a todos para leitura; somente admins editam
+## 3. Badge "Playbook customizado" vs "Roteiro padrão ACENDER" no SalesCoachCard
 
-### Trilhas de Nutrição
-- ✅ Tabela `nurture_tracks` populada com **7 trilhas** (T1–T7)
-- ✅ Editor admin em `/trilhas` (passos com dia, ação, mensagem, asset)
-- ✅ Atribuição automática a leads conforme etapa
+**Modificar:** `supabase/functions/sales-coach/index.ts` — incluir no JSON de resposta o campo `playbook_source: 'custom' | 'default'` (já temos a info da query de playbooks na função).
 
-### Assets / Materiais
-- ✅ Tabela `assets` populada com **9 itens** (A1–A6 profissional, B1–B3 distribuidor)
-- ✅ Página `/assets` com filtro por tipo de lead
-- ✅ Códigos vinculados em scripts e trilhas
+**Modificar:** `src/hooks/useSalesCoach.ts` — tipar `SalesCoachRecommendation` com `playbook_source`.
 
-### Scripts ACENDER
-- ✅ **40 scripts** populados, mapeados por etapa, com variável `{nome}`
+**Modificar:** `src/components/leads/SalesCoachCard.tsx` — renderizar `<Badge>` discreto ao lado do título:
+- `custom` → "Playbook customizado" (variant `default`)
+- `default` → "Roteiro ACENDER padrão" (variant `outline`)
 
-### Pós-Venda / LTV
-- ✅ Etapa Recorrência com substages D+2 → D+90
-- ✅ Conversão automática Encerramento → Recorrência
-- ✅ Tabela `client_orders` para registro de pedidos e cálculo de LTV
-- ✅ Página `/clientes` com dashboard, alertas de churn (>14 dias), evolução de pedidos, funil de substages
+## 4. Smoke tests de UI
 
-### Dashboard Gerencial (`/gerencial`)
-- ✅ Gargalos por etapa, taxa de resposta por canal, aging por lead, performance por segmento
-- ✅ Métricas de IA: aceitação vs ignorados
+**Novo:**
+- `src/components/leads/__tests__/LeadCard.test.tsx` — renderiza com lead mock, verifica nome, badge da etapa, score visível, botão WhatsApp presente.
+- `src/components/ui/__tests__/EmptyState.test.tsx` — renderiza título/descrição/CTA opcional.
+- `src/components/layout/__tests__/BottomNav.test.tsx` — renderiza links de navegação principais (envolto em `MemoryRouter`).
 
-### UX / Design System
-- ✅ Tokens semânticos HSL em `index.css`
-- ✅ Componentes padrão `EmptyState`, `ErrorState`, `LoadingSkeleton` aplicados em todas páginas
-- ✅ `refetch()` do TanStack Query (sem `window.location.reload`)
-- ✅ Cards com status dot + ring sutil para P1 (sem bordas pesadas)
-- ✅ Mobile-first com BottomNav; layout adaptativo
-- ✅ Dark theme premium minimal
-- ✅ Acessibilidade: 48px touch targets, aria-labels
+Usa stack já configurada (Vitest + Testing Library + jsdom). Mocks mínimos para hooks de dados (TanStack Query wrapper + `vi.mock` de `useScripts`).
 
-### Offline & Sync
-- ✅ Estratégia offline-first com IndexedDB (sync queue)
-- ✅ Mapeamento `notion_page_id` para sincronização externa
+## 5. Onboarding admin em /playbooks
+
+**Modificar:** `src/pages/Playbooks.tsx`
+
+- Detecta primeiro acesso via `localStorage.getItem('playbooks_onboarding_seen')`.
+- Se admin (já temos `useUserRole`) e não visto → abre `<Dialog>` com 3 passos:
+  1. "O que é um Playbook" (descrição + exemplo)
+  2. "Como a IA usa" (explica grounding no Coach)
+  3. "Criar seu primeiro" (CTA que abre `PlaybookFormModal`)
+- Marca `localStorage` ao fechar.
+
+Não-admins não veem o modal.
 
 ---
 
-## ⚠️ Erros & Pontos de Atenção Conhecidos
+## Arquivos
 
-| # | Item | Severidade | Observação |
-|---|------|-----------|------------|
-| 1 | Console logs do preview vazios no momento da auditoria | ✅ OK | Sem erros runtime detectados |
-| 2 | `LeadCard` ainda chama `useScripts(stage)` por card (potencial N+1) | 🟡 Médio | Mitigado pelo cache do TanStack Query, mas ideal extrair para `useScriptsByStages` no nível do container |
-| 3 | `useLeadEnrichment` planejado mas não criado | 🟡 Baixo | Lógica `mapLegacyStage`/`STAGE_GUIDANCE`/`buildLeadContext` ainda no render do `LeadCard` |
-| 4 | `client_orders` está vazia (0 registros) | 🟢 Esperado | Aguardando primeiros pedidos reais |
-| 5 | Nenhum teste de componente (apenas domain) | 🟡 Baixo | 25 testes de domínio passam; falta smoke test de UI |
-| 6 | Filtro `priority` em `useLeads` sem índice dedicado | 🟢 Baixo | Sem impacto no volume atual |
-| 7 | `useSalesCoach` não exibe label visual quando playbook custom é usado vs fallback ACENDER | 🟡 Baixo | Funciona, mas usuário não sabe a fonte |
+**Criar (5):**
+- `src/hooks/useLeadEnrichment.ts`
+- `src/hooks/useScriptsByStages.ts`
+- `src/components/leads/__tests__/LeadCard.test.tsx`
+- `src/components/ui/__tests__/EmptyState.test.tsx`
+- `src/components/layout/__tests__/BottomNav.test.tsx`
 
-**Nenhum bug bloqueante identificado.** O app está operável end-to-end.
+**Modificar (7):**
+- `src/components/leads/LeadCard.tsx` (consome hook + aceita scripts via prop)
+- `src/hooks/useScripts.ts` (compatível com cache batch)
+- `src/pages/Proximos.tsx`, `src/pages/Leads.tsx`, `src/components/leads/KanbanBoard.tsx`, `src/components/leads/LeadListView.tsx` (pré-fetch batch)
+- `supabase/functions/sales-coach/index.ts` (retorna `playbook_source`)
+- `src/hooks/useSalesCoach.ts` (tipo)
+- `src/components/leads/SalesCoachCard.tsx` (badge)
+- `src/pages/Playbooks.tsx` (modal de onboarding)
 
----
+**Banco de dados:** sem alterações.
 
-## 🗄️ Banco vs Interface — Recomendação
+## Critérios de aceite
 
-**Pergunta:** popular banco com trilhas/assets/playbooks ou manter na interface?
+- `LeadCard` não importa mais `@/domain/*` nem `mapLegacyStage` diretamente.
+- Lista com N leads dispara **1** query a `scripts` (verificável no Network).
+- Coach mostra badge da fonte do roteiro.
+- `vitest run` passa todos os testes (25 domain + 3 UI novos).
+- Admin vê modal de onboarding na 1ª visita a `/playbooks`; não reabre depois.
 
-**Resposta: já está populado no banco e essa é a abordagem correta. Manter assim.**
-
-| Critério | Banco (atual) | Interface hardcoded |
-|----------|---------------|---------------------|
-| Edição sem deploy | ✅ Admin pode editar via `/playbooks`, `/trilhas`, `/assets` | ❌ Requer code change |
-| RLS / multi-tenant | ✅ Controlado por role | ❌ N/A |
-| Versionamento de conteúdo | ✅ `updated_at` automático | 🟡 Via git |
-| Backup automatizado | ✅ Lovable Cloud | ❌ Manual |
-| Personalização por usuário admin | ✅ Sim | ❌ Não |
-| Ground truth para IA | ✅ Edge function consulta direto | 🟡 Bundled na função |
-
-**Estado atual confirmado por query:**
-- `playbooks`: **14** (cobertura 100% — 7 etapas × 2 perfis)
-- `nurture_tracks`: **7** (T1–T7)
-- `assets`: **9** (A1–A6 + B1–B3)
-- `scripts`: **40**
-
-**Ação recomendada:** **nenhuma migração nova**. Apenas garantir que novos admins saibam usar os editores `/playbooks` e `/trilhas`. Se desejar, criar onboarding admin documentando como customizar.
-
----
-
-## 🚀 Melhorias Sugeridas (Próximas Ondas)
-
-### Curto prazo (1–2 dias)
-1. **Extrair `useLeadEnrichment` hook** — desacoplar lógica do `LeadCard`, deixá-lo apresentacional puro
-2. **`useScriptsByStages` (batch)** — eliminar N+1 em listas grandes
-3. **Badge no SalesCoachCard** — indicar "Playbook customizado" vs "Roteiro padrão ACENDER"
-4. **Smoke tests de UI** — `LeadCard`, `EmptyState`, `BottomNav` (Vitest + Testing Library)
-5. **Onboarding admin** — modal guiado na primeira vez que admin acessa `/playbooks`
-
-### Médio prazo (1 semana)
-6. **A/B testing de playbooks** — versionar variações e medir conversão
-7. **Notificações push (PWA)** — alertar overdue/SLAs via service worker
-8. **Sugestão de próximo asset baseada em comportamento** — IA aprende com `ai_analytics`
-9. **Importação em massa de playbooks via JSON/CSV**
-10. **Histórico completo de versões de playbook** (audit log)
-
-### Longo prazo (visão produto)
-11. **Integração WhatsApp Business API** — enviar mensagens diretamente do CRM
-12. **Análise de sentimento das interações** via Lovable AI
-13. **Forecast de vendas com ML** baseado em `client_orders` + estágio
-14. **Multi-tenant org-level** (hoje é por user_id; permitir times)
-15. **Marketplace de playbooks** — admins compartilham templates entre tenants
-16. **Mobile app nativo** (Capacitor wrapper sobre o PWA atual)
-17. **Webhooks de entrada** — capturar leads de Meta Ads, Google Forms etc. direto no pipeline
-18. **Relatórios PDF exportáveis** do `/gerencial`
-
----
-
-## 📁 Arquitetura — Mapa Rápido
-
-```
-src/
-  domain/             # Regras de negócio puras (testadas)
-    nba-rules.ts      # 9 regras declarativas ACENDER
-    nba-engine.ts     # Avaliador + enriquecimento
-    lead-scoring.ts   # Score 0–100
-    stage-transitions.ts
-    __tests__/        # 25 testes ✅
-  hooks/              # TanStack Query + Supabase
-  components/
-    ui/               # shadcn + EmptyState/ErrorState/LoadingSkeleton
-    leads/            # LeadCard, SalesCoachCard, KanbanBoard...
-    playbooks/        # PlaybookFormModal
-  pages/              # Index (Agora), Leads, Clientes, Gerencial, Playbooks, Trilhas, Assets
-  lib/
-    nba-engine.ts     # DEPRECATED — re-export do domain
-supabase/
-  functions/sales-coach/  # Edge function com playbook grounding
-  migrations/             # Histórico SQL
-```
-
----
-
-## 🧪 Saúde Técnica
-
-- ✅ Build: passa
-- ✅ Testes: 25/25 passando
-- ✅ Console preview: sem erros
-- ✅ RLS: ativo em todas as tabelas
-- ✅ Domain layer isolado e testado
-- 🟡 Dívida técnica: hooks de enrichment não extraídos
+Aprovar para eu implementar?
