@@ -106,6 +106,7 @@ serve(async (req) => {
 
     // Load matching playbook (if any) to ground recommendations
     let playbookSection = '';
+    let playbookSource: 'custom' | 'default' = 'default';
     try {
       const { data: playbook } = await supabaseClient
         .from('playbooks')
@@ -117,6 +118,7 @@ serve(async (req) => {
         .maybeSingle();
 
       if (playbook) {
+        playbookSource = 'custom';
         const objectives = (playbook.objectives ?? []).map((o: string) => `  • ${o}`).join('\n');
         const questions = (playbook.key_questions ?? []).map((q: string) => `  • ${q}`).join('\n');
         const scripts = (playbook.scripts ?? []).map((s: any) => `  [${s.label || 'Script'}] ${s.content}`).join('\n');
@@ -249,6 +251,8 @@ Responda com um JSON no formato:
         raw_response: content,
       };
     }
+
+    recommendations.playbook_source = playbookSource;
 
     console.log("Sales coach recommendations generated successfully");
 

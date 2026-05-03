@@ -26,6 +26,7 @@ export interface SalesCoachRecommendation {
   strategic_tips?: string[];
   objections_to_expect?: string[];
   next_steps?: string;
+  playbook_source?: 'custom' | 'default';
   raw_response?: string;
   error?: string;
 }
