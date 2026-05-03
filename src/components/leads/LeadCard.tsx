@@ -9,12 +9,9 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { EnrichedLead } from '@/hooks/useLeads';
-import { useScripts } from '@/hooks/useScripts';
-import { 
-  ACENDER_STAGES, ORIGIN_LABELS, ACTION_TYPE_CONFIG, STAGE_GUIDANCE, mapLegacyStage,
-} from '@/types/database';
-import { buildLeadContext } from '@/domain/nba-engine';
-import { calculateLeadScore } from '@/domain/lead-scoring';
+import { useScripts, type DbScript } from '@/hooks/useScripts';
+import { useLeadEnrichment } from '@/hooks/useLeadEnrichment';
+import { ORIGIN_LABELS, ACTION_TYPE_CONFIG } from '@/types/database';
 import { QuickCoachTip } from './QuickCoachTip';
 import { useState } from 'react';
 
@@ -22,20 +19,16 @@ interface LeadCardProps {
   lead: EnrichedLead;
   onMarkDone?: (leadId: string) => void;
   onReschedule?: (leadId: string) => void;
+  /** Optional pre-fetched scripts to avoid N+1 queries when rendering lists */
+  scripts?: DbScript[];
 }
 
-export function LeadCard({ lead, onMarkDone, onReschedule }: LeadCardProps) {
-  const resolvedStage = mapLegacyStage(lead.stage);
-  const currentStage = ACENDER_STAGES.find(s => s.value === resolvedStage);
-  const guidance = STAGE_GUIDANCE[resolvedStage];
-  const { data: scripts } = useScripts(resolvedStage);
+export function LeadCard({ lead, onMarkDone, onReschedule, scripts: scriptsProp }: LeadCardProps) {
+  const { resolvedStage, currentStage, guidance, score, isP1, nextStageLabel } = useLeadEnrichment(lead);
+  const { data: scriptsFetched } = useScripts(scriptsProp ? undefined : resolvedStage);
+  const scripts = scriptsProp ?? scriptsFetched;
   const [showScripts, setShowScripts] = useState(false);
 
-  // Compute operational score
-  const ctx = buildLeadContext(lead);
-  const score = calculateLeadScore(ctx);
-  
-  const isP1 = lead.priority === 'P1';
 
   const handleCopyMessage = (message?: string) => {
     const msg = message || lead.suggestedMessage;
