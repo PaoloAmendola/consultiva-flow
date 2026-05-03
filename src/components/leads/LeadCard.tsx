@@ -197,7 +197,7 @@ export function LeadCard({ lead, onMarkDone, onReschedule, scripts: scriptsProp 
       {guidance?.nextStage && (
         <div className="mb-2 flex items-center gap-1.5 text-[10px] text-muted-foreground">
           <ArrowRight className="h-3 w-3 flex-shrink-0" />
-          <span>Após resposta → <strong className="text-foreground">{ACENDER_STAGES.find(s => s.value === guidance.nextStage)?.label}</strong></span>
+          <span>Após resposta → <strong className="text-foreground">{nextStageLabel}</strong></span>
         </div>
       )}
 
