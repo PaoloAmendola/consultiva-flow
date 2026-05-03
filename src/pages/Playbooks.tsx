@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { usePlaybooks, type Playbook } from '@/hooks/usePlaybooks';
 import { useDeletePlaybook } from '@/hooks/usePlaybookMutations';
@@ -14,10 +14,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
-import { BookOpen, Target, HelpCircle, MessageSquare, Shield, CheckCircle, ArrowRight, Plus, Pencil, Trash2 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import { BookOpen, Target, HelpCircle, MessageSquare, Shield, CheckCircle, ArrowRight, Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
 import { ACENDER_STAGES, STAGE_GUIDANCE } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { PlaybookFormModal } from '@/components/playbooks/PlaybookFormModal';
+
+const ONBOARDING_KEY = 'playbooks_onboarding_seen_v1';
 
 const Playbooks = () => {
   const [selectedType, setSelectedType] = useState('PROFISSIONAL');
