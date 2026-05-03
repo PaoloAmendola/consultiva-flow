@@ -9,7 +9,7 @@ import type { EnrichedLead } from '@/hooks/useLeads';
 vi.mock('@/hooks/useScripts', () => ({
   useScripts: () => ({ data: [] }),
 }));
-vi.mock('../QuickCoachTip', () => ({
+vi.mock('@/components/leads/QuickCoachTip', () => ({
   QuickCoachTip: () => null,
 }));
 
