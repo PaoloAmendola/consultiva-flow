@@ -24,7 +24,7 @@ export interface LeadEnrichment {
  */
 export function useLeadEnrichment(lead: EnrichedLead): LeadEnrichment {
   return useMemo(() => {
-    const resolvedStage = mapLegacyStage(lead.stage);
+    const resolvedStage = mapLegacyStage(lead.stage) as AcenderStage;
     const currentStage = ACENDER_STAGES.find(s => s.value === resolvedStage);
     const guidance = STAGE_GUIDANCE[resolvedStage];
     const score = calculateLeadScore(buildLeadContext(lead));
