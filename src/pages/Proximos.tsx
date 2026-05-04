@@ -262,7 +262,7 @@ const Proximos = () => {
                   ) : (
                     <div className="grid gap-3">
                       {day.leads.map(lead => (
-                        <LeadCard key={lead.id} lead={lead} onMarkDone={handleMarkDone} onReschedule={handleReschedule} />
+                        <LeadCard key={lead.id} lead={lead} onMarkDone={handleMarkDone} onReschedule={handleReschedule} playbookSource={sourceByLead.get(lead.id)} />
                       ))}
                     </div>
                   )}
