@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { CreateLeadForm } from '@/components/leads/CreateLeadForm';
 import { ImportLeadsModal } from '@/components/leads/ImportLeadsModal';
@@ -11,7 +11,8 @@ import { Search, Filter, X, Columns3, List, AlignJustify } from 'lucide-react';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { useActiveLeads } from '@/hooks/useLeads';
-import { ACENDER_SALES_STAGES, LeadPriority } from '@/types/database';
+import { useScriptsByStages } from '@/hooks/useScriptsByStages';
+import { ACENDER_SALES_STAGES, LeadPriority, mapLegacyStage } from '@/types/database';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'kanban' | 'list' | 'compact';
