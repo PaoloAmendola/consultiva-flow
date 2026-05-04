@@ -68,14 +68,14 @@ const Proximos = () => {
 
 
   const groupedByDay = useMemo(() => {
-    if (!leads) return [];
+    if (!filteredLeads) return [];
     const now = new Date();
-    const days: { date: Date; label: string; leads: typeof leads }[] = [];
+    const days: { date: Date; label: string; leads: typeof filteredLeads }[] = [];
     for (let i = 0; i < 7; i++) {
       const date = addDays(now, i);
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
-      const dayLeads = leads.filter(lead => {
+      const dayLeads = filteredLeads.filter(lead => {
         const actionDate = new Date(lead.next_action_at);
         return isAfter(actionDate, dayStart) && isBefore(actionDate, dayEnd);
       }).sort((a, b) => new Date(a.next_action_at).getTime() - new Date(b.next_action_at).getTime());
@@ -88,7 +88,7 @@ const Proximos = () => {
       }
     }
     return days;
-  }, [leads]);
+  }, [filteredLeads]);
 
   // Tasks grouped by day
   const tasksByDay = useMemo(() => {
