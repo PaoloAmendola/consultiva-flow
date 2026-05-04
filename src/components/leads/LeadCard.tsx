@@ -21,9 +21,11 @@ interface LeadCardProps {
   onReschedule?: (leadId: string) => void;
   /** Optional pre-fetched scripts to avoid N+1 queries when rendering lists */
   scripts?: DbScript[];
+  /** Optional playbook source badge (custom vs default ACENDER) */
+  playbookSource?: 'custom' | 'default';
 }
 
-export function LeadCard({ lead, onMarkDone, onReschedule, scripts: scriptsProp }: LeadCardProps) {
+export function LeadCard({ lead, onMarkDone, onReschedule, scripts: scriptsProp, playbookSource }: LeadCardProps) {
   const { resolvedStage, currentStage, guidance, score, isP1, nextStageLabel } = useLeadEnrichment(lead);
   const { data: scriptsFetched } = useScripts(scriptsProp ? undefined : resolvedStage);
   const scripts = scriptsProp ?? scriptsFetched;
