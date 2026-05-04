@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,8 +32,21 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
   const [recommendations, setRecommendations] = useState<SalesCoachRecommendation | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<'accepted' | 'ignored' | null>(null);
+  const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
   const salesCoach = useSalesCoach(lead.id);
   const trackAi = useTrackAiEvent();
+
+  // Listen to global Realtime revalidation events from useScriptsByStages
+  useEffect(() => {
+    if (!recommendations) return;
+    const handler = () => {
+      setRefreshedAt(Date.now());
+      // auto-hide after 4s
+      setTimeout(() => setRefreshedAt(null), 4000);
+    };
+    window.addEventListener('scripts:revalidated', handler);
+    return () => window.removeEventListener('scripts:revalidated', handler);
+  }, [recommendations]);
 
   const handleGetRecommendations = async () => {
     try {
@@ -161,6 +174,16 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
                   : 'Sugestão baseada no roteiro padrão ACENDER®'}
               >
                 {recommendations.playbook_source === 'custom' ? 'Playbook customizado' : 'Roteiro ACENDER padrão'}
+              </Badge>
+            )}
+            {refreshedAt && (
+              <Badge
+                variant="secondary"
+                className="text-[10px] font-normal gap-1 animate-pulse"
+                title="Scripts foram atualizados em tempo real"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Atualizado agora
               </Badge>
             )}
           </CardTitle>
