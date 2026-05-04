@@ -176,6 +176,16 @@ export function SalesCoachCard({ lead }: SalesCoachCardProps) {
                 {recommendations.playbook_source === 'custom' ? 'Playbook customizado' : 'Roteiro ACENDER padrão'}
               </Badge>
             )}
+            {refreshedAt && (
+              <Badge
+                variant="secondary"
+                className="text-[10px] font-normal gap-1 animate-pulse"
+                title="Scripts foram atualizados em tempo real"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Atualizado agora
+              </Badge>
+            )}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge className={cn("text-xs", urgencyConfig[recommendations.urgency]?.color)}>
