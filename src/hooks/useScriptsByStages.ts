@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { DbScript } from './useScripts';
+import { toast } from 'sonner';
 
 const getClient = () => supabase as any;
 
