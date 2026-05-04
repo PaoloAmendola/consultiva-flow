@@ -91,6 +91,15 @@ export function LeadCard({ lead, onMarkDone, onReschedule, scripts: scriptsProp,
             {lead.company && (
               <span className="text-[10px] text-muted-foreground truncate">• {lead.company}</span>
             )}
+            {playbookSource && (
+              <Badge
+                variant={playbookSource === 'custom' ? 'default' : 'outline'}
+                className="text-[9px] px-1 py-0 h-4"
+                title={playbookSource === 'custom' ? 'Roteiro vem de Playbook customizado' : 'Roteiro ACENDER padrão'}
+              >
+                {playbookSource === 'custom' ? '⚡ Playbook' : 'Padrão'}
+              </Badge>
+            )}
           </div>
         </div>
         {/* Discrete score */}
