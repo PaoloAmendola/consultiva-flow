@@ -1,94 +1,98 @@
-# Plano de Correções de Curto Prazo
+# Plano: Filtros do Coach na Agora, Batch de Scripts em Leads, Cache Reativa e Auditoria de Segurança
 
-Foco: resolver os 5 itens "Curto prazo" da auditoria sem mudanças de banco de dados.
+## 1. Filtro "Playbook customizado vs Roteiro padrão" na tela Agora (`Próximos`)
 
-## 1. Extrair `useLeadEnrichment`
+**Problema**: `playbook_source` só existe na resposta da edge `sales-coach` por lead, não está armazenado. Para filtrar a lista, precisamos saber a origem do roteiro de cada lead sem chamar a IA por todos.
 
-**Novo:** `src/hooks/useLeadEnrichment.ts`
+**Decisão**: como `playbook_source` deriva da existência de um `playbooks` row para `(stage, lead_type)`, podemos calculá-lo no client a partir do hook `usePlaybooks` (já existente) — sem custos de IA, sem coluna nova no banco.
 
-Centraliza o cálculo derivado por lead (hoje espalhado dentro de `LeadCard`):
-- `resolvedStage = mapLegacyStage(lead.stage)`
-- `currentStage` (de `ACENDER_STAGES`)
-- `guidance` (de `STAGE_GUIDANCE`)
-- `score` (via `buildLeadContext` + `calculateLeadScore`)
-- `nextStageLabel`
+**Implementação**:
+- Novo helper `src/domain/playbook-source.ts`:
+  - `getPlaybookSource(lead, playbooks): 'custom' | 'default'`
+  - Procura playbook com `stage === mapLegacyStage(lead.stage)` e `lead_type === lead.lead_type`. Se achar → `custom`, senão → `default`.
+- Em `src/pages/Proximos.tsx`:
+  - Carregar `usePlaybooks()` uma vez.
+  - Adicionar estado `coachFilter: 'all' | 'custom' | 'default'`.
+  - Renderizar `<ToggleGroup>` (3 botões) acima das Tabs: "Todos · Playbook · Padrão" com contagens.
+  - Aplicar filtro em `groupedByDay` antes do agrupamento.
+  - Mostrar badge sutil em cada `LeadCard` da Agora indicando a fonte (passar `playbookSource` como prop opcional ao `LeadCard`).
+- Atualizar `src/components/leads/LeadCard.tsx` para aceitar prop opcional `playbookSource` e renderizar badge pequeno ao lado do nome quando presente.
 
-Retorna um objeto memoizado por `lead.id + lead.updated_at`.
+## 2. Batch prefetch de scripts em `/leads`
 
-**Modificar:** `src/components/leads/LeadCard.tsx` para consumir o hook e ficar puramente apresentacional (sem importar `nba-engine`, `lead-scoring` ou `mapLegacyStage` direto).
+**Implementação**:
+- Em `src/pages/Leads.tsx`: chamar `useScriptsByStages(stagesInView)` com `stagesInView = unique(leads.map(l => mapLegacyStage(l.stage)))` (mesmo padrão de `Proximos.tsx`).
+- Garantir o mesmo prefetch em `LeadListView.tsx` (caso seja usado isolado em outro contexto futuro — só invocar `useScriptsByStages` lá também por simetria).
+- `KanbanBoard.tsx` já tem; conferir e padronizar.
 
-## 2. `useScriptsByStages` (batch)
+## 3. `useScriptsByStages` reativo a mudanças
 
-**Novo:** `src/hooks/useScriptsByStages.ts`
+**Problema atual**: `useScripts*` mutations invalidam `['scripts']` parcialmente (chave exata), mas a chave do batch é `['scripts', 'by-stages', [...]]`. Se admin edita script ou Notion sincroniza, a cache do batch fica obsoleta.
 
-- Recebe `stages: AcenderStage[]` (deduplicados) e faz **uma única query** `scripts.select().in('stage', stages)`.
-- Retorna `Map<stage, Script[]>` via TanStack Query (cache compartilhado).
-- Mantém `useScripts(stage)` existente como wrapper fino que lê do mesmo cache key, para retrocompatibilidade.
+**Implementação**:
+- Em `src/hooks/useScripts.ts`: trocar `invalidateQueries({ queryKey: ['scripts'] })` por `invalidateQueries({ queryKey: ['scripts'], exact: false })` (já é o default, mas garantir) — isso invalida tanto `['scripts', stage]` quanto `['scripts', 'by-stages', ...]`.
+- Em `src/hooks/useScriptsByStages.ts`:
+  - Adicionar `staleTime: 5 * 60_000` (5min) e `refetchOnWindowFocus: true` para auto-revalidar quando o usuário volta à aba.
+  - Adicionar Realtime subscription opcional via `supabase.channel('scripts-changes').on('postgres_changes', { event: '*', schema: 'public', table: 'scripts' }, () => queryClient.invalidateQueries({ queryKey: ['scripts'] }))`. Cleanup no unmount.
+  - Migration SQL: `ALTER PUBLICATION supabase_realtime ADD TABLE public.scripts;` (idempotente via `DO $$ ... EXCEPTION WHEN duplicate_object`).
 
-**Modificar:** containers que renderizam listas de `LeadCard` (`Proximos.tsx`, `Leads.tsx`, `KanbanBoard.tsx`, `LeadListView.tsx`) — pré-carregam `useScriptsByStages` com os stages distintos da lista.
+## 4. Auditoria de segurança e ajustes
 
-**Modificar:** `LeadCard.tsx` — opcionalmente aceita `scripts?: Script[]` via prop; se vier, pula o `useScripts` interno (elimina N+1 de fato; sem prop, mantém comportamento atual).
+**Achados do linter** (25 warnings):
+- **W1–20**: tabelas visíveis no schema GraphQL para `anon`/`authenticated` (informativo — todas as tabelas têm RLS, então é exposição de schema, não de dados). **Aceitar** e documentar no `security-memory`.
+- **W21–24**: `SECURITY DEFINER` funções executáveis — `has_role`, `update_updated_at_column`, `update_lead_last_touch`, `handle_new_user`. Estas precisam ser `SECURITY DEFINER` por design (RLS bypass, trigger execution). **Aceitar** e documentar.
+- **W25 (acionável)**: **Leaked Password Protection desabilitado** → ativar via `configure_auth({ password_hibp_enabled: true })`.
 
-## 3. Badge "Playbook customizado" vs "Roteiro padrão ACENDER" no SalesCoachCard
+**RLS — revisão tabela por tabela**:
+- `leads`, `interactions`, `tasks`, `client_orders`, `profiles`: ✅ owner-scoped (`auth.uid() = user_id`). OK.
+- `user_roles`: ✅ SELECT própria; sem INSERT/UPDATE/DELETE público. **Risco**: usuários novos ficam sem role; o trigger `handle_new_user` insere `'user'` automaticamente — OK.
+- `assets`, `nurture_tracks`, `playbooks`, `scripts`: SELECT para `authenticated`, mutações só `admin` via `has_role`. ✅ correto.
+- **Gap pequeno**: políticas em `assets/playbooks/nurture_tracks` usam `roles: {public}` em vez de `{authenticated}` para INSERT/UPDATE/DELETE. `has_role` já bloqueia anônimos, mas para defense-in-depth recriar como `TO authenticated`. Migration:
+  ```sql
+  DROP POLICY "Admins can insert assets" ON public.assets;
+  CREATE POLICY "Admins can insert assets" ON public.assets
+    FOR INSERT TO authenticated
+    WITH CHECK (has_role(auth.uid(), 'admin'));
+  -- repetir para update/delete em assets, playbooks, nurture_tracks
+  ```
 
-**Modificar:** `supabase/functions/sales-coach/index.ts` — incluir no JSON de resposta o campo `playbook_source: 'custom' | 'default'` (já temos a info da query de playbooks na função).
+**Edge Function `sales-coach`**:
+- Atualmente sem bloco em `supabase/config.toml` → deploy padrão com `verify_jwt = true` (default Lovable é `false` mas para esta função de IA chamando dados de lead, JWT garante auth). Verificar no `config.toml` e adicionar bloco `[functions.sales-coach] verify_jwt = true` se não estiver garantido.
+- Confirmar que a função usa o token do usuário ao consultar `playbooks` (RLS), e não service role indiscriminado.
 
-**Modificar:** `src/hooks/useSalesCoach.ts` — tipar `SalesCoachRecommendation` com `playbook_source`.
+**Buckets de Storage**: nenhum bucket existe — nada a auditar.
 
-**Modificar:** `src/components/leads/SalesCoachCard.tsx` — renderizar `<Badge>` discreto ao lado do título:
-- `custom` → "Playbook customizado" (variant `default`)
-- `default` → "Roteiro ACENDER padrão" (variant `outline`)
+**Auth providers**: revisar e garantir Google habilitado (padrão Lovable). Email/password ✅.
 
-## 4. Smoke tests de UI
-
-**Novo:**
-- `src/components/leads/__tests__/LeadCard.test.tsx` — renderiza com lead mock, verifica nome, badge da etapa, score visível, botão WhatsApp presente.
-- `src/components/ui/__tests__/EmptyState.test.tsx` — renderiza título/descrição/CTA opcional.
-- `src/components/layout/__tests__/BottomNav.test.tsx` — renderiza links de navegação principais (envolto em `MemoryRouter`).
-
-Usa stack já configurada (Vitest + Testing Library + jsdom). Mocks mínimos para hooks de dados (TanStack Query wrapper + `vi.mock` de `useScripts`).
-
-## 5. Onboarding admin em /playbooks
-
-**Modificar:** `src/pages/Playbooks.tsx`
-
-- Detecta primeiro acesso via `localStorage.getItem('playbooks_onboarding_seen')`.
-- Se admin (já temos `useUserRole`) e não visto → abre `<Dialog>` com 3 passos:
-  1. "O que é um Playbook" (descrição + exemplo)
-  2. "Como a IA usa" (explica grounding no Coach)
-  3. "Criar seu primeiro" (CTA que abre `PlaybookFormModal`)
-- Marca `localStorage` ao fechar.
-
-Não-admins não veem o modal.
+**Atualizar `security-memory`** explicando:
+- App é multi-tenant por `user_id`; conteúdo (playbooks/scripts/assets/tracks) é compartilhado entre usuários autenticados, editável só por admin.
+- W1–24 do linter são aceitáveis (RLS protege; SECURITY DEFINER funções são intencionais).
 
 ---
 
-## Arquivos
+## Detalhes técnicos por arquivo
 
-**Criar (5):**
-- `src/hooks/useLeadEnrichment.ts`
-- `src/hooks/useScriptsByStages.ts`
-- `src/components/leads/__tests__/LeadCard.test.tsx`
-- `src/components/ui/__tests__/EmptyState.test.tsx`
-- `src/components/layout/__tests__/BottomNav.test.tsx`
+**Criar:**
+- `src/domain/playbook-source.ts`
+- `src/domain/__tests__/playbook-source.test.ts`
+- Migration SQL: realtime para `scripts` + recriar policies admin com `TO authenticated`.
 
-**Modificar (7):**
-- `src/components/leads/LeadCard.tsx` (consome hook + aceita scripts via prop)
-- `src/hooks/useScripts.ts` (compatível com cache batch)
-- `src/pages/Proximos.tsx`, `src/pages/Leads.tsx`, `src/components/leads/KanbanBoard.tsx`, `src/components/leads/LeadListView.tsx` (pré-fetch batch)
-- `supabase/functions/sales-coach/index.ts` (retorna `playbook_source`)
-- `src/hooks/useSalesCoach.ts` (tipo)
-- `src/components/leads/SalesCoachCard.tsx` (badge)
-- `src/pages/Playbooks.tsx` (modal de onboarding)
+**Modificar:**
+- `src/pages/Proximos.tsx` — filtro Coach + ToggleGroup
+- `src/pages/Leads.tsx` — `useScriptsByStages` prefetch
+- `src/components/leads/LeadCard.tsx` — prop opcional `playbookSource` + badge
+- `src/hooks/useScriptsByStages.ts` — `staleTime`, `refetchOnWindowFocus`, Realtime subscription
+- `supabase/config.toml` — bloco para `sales-coach` se necessário
 
-**Banco de dados:** sem alterações.
+**Tooling:**
+- `configure_auth({ password_hibp_enabled: true })`
+- `supabase--linter` re-run para confirmar redução
+- `update_memory` no security-memory
 
 ## Critérios de aceite
-
-- `LeadCard` não importa mais `@/domain/*` nem `mapLegacyStage` diretamente.
-- Lista com N leads dispara **1** query a `scripts` (verificável no Network).
-- Coach mostra badge da fonte do roteiro.
-- `vitest run` passa todos os testes (25 domain + 3 UI novos).
-- Admin vê modal de onboarding na 1ª visita a `/playbooks`; não reabre depois.
-
-Aprovar para eu implementar?
+- Tela Agora mostra 3 chips (Todos/Playbook/Padrão) com contagens corretas e filtra a lista.
+- LeadCard mostra badge da fonte do playbook na Agora.
+- `/leads` faz 1 query `scripts` ao carregar, independente do nº de leads (verificável no Network).
+- Editar um script no `/playbooks` reflete imediatamente no Coach do próximo lead aberto, sem reload.
+- Linter Supabase: leaked password ativo; demais warnings documentados como aceitos.
+- Sem alterações destrutivas em RLS; políticas de admin agora `TO authenticated` (defense-in-depth).

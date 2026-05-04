@@ -25,15 +25,20 @@ import {
 import { ErrorState } from '@/components/ui/ErrorState';
 import { useScriptsByStages } from '@/hooks/useScriptsByStages';
 import { mapLegacyStage } from '@/types/database';
+import { usePlaybooks } from '@/hooks/usePlaybooks';
+import { getPlaybookSource, type PlaybookSource } from '@/domain/playbook-source';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const Proximos = () => {
   const { data: leads, isLoading, error, refetch } = useActiveLeads();
   const { data: tasks, isLoading: tasksLoading, refetch: refetchTasks } = useOpenTasks();
+  const { data: playbooks } = usePlaybooks();
   const updateLead = useUpdateLead();
   const createInteraction = useCreateInteraction();
   const completeTask = useCompleteTask();
   const cancelTask = useCancelTask();
   const [activeTab, setActiveTab] = useState('agenda');
+  const [coachFilter, setCoachFilter] = useState<'all' | PlaybookSource>('all');
 
   // Batch-fetch scripts for all stages currently visible (avoids N+1)
   const stagesInView = useMemo(
@@ -42,16 +47,35 @@ const Proximos = () => {
   );
   useScriptsByStages(stagesInView);
 
+  // Compute playbook source per lead (memoized)
+  const sourceByLead = useMemo(() => {
+    const map = new Map<string, PlaybookSource>();
+    for (const l of leads ?? []) map.set(l.id, getPlaybookSource(l, playbooks));
+    return map;
+  }, [leads, playbooks]);
+
+  const filteredLeads = useMemo(() => {
+    if (!leads) return [];
+    if (coachFilter === 'all') return leads;
+    return leads.filter(l => sourceByLead.get(l.id) === coachFilter);
+  }, [leads, coachFilter, sourceByLead]);
+
+  const customCount = useMemo(
+    () => (leads ?? []).filter(l => sourceByLead.get(l.id) === 'custom').length,
+    [leads, sourceByLead],
+  );
+  const defaultCount = (leads?.length ?? 0) - customCount;
+
 
   const groupedByDay = useMemo(() => {
-    if (!leads) return [];
+    if (!filteredLeads) return [];
     const now = new Date();
-    const days: { date: Date; label: string; leads: typeof leads }[] = [];
+    const days: { date: Date; label: string; leads: typeof filteredLeads }[] = [];
     for (let i = 0; i < 7; i++) {
       const date = addDays(now, i);
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
-      const dayLeads = leads.filter(lead => {
+      const dayLeads = filteredLeads.filter(lead => {
         const actionDate = new Date(lead.next_action_at);
         return isAfter(actionDate, dayStart) && isBefore(actionDate, dayEnd);
       }).sort((a, b) => new Date(a.next_action_at).getTime() - new Date(b.next_action_at).getTime());
@@ -64,7 +88,7 @@ const Proximos = () => {
       }
     }
     return days;
-  }, [leads]);
+  }, [filteredLeads]);
 
   // Tasks grouped by day
   const tasksByDay = useMemo(() => {
@@ -175,6 +199,30 @@ const Proximos = () => {
         </div>
       )}
 
+      {/* Coach source filter */}
+      {!loading && (leads?.length ?? 0) > 0 && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Coach:</span>
+          <ToggleGroup
+            type="single"
+            size="sm"
+            value={coachFilter}
+            onValueChange={(v) => v && setCoachFilter(v as any)}
+            className="bg-secondary rounded-lg p-0.5"
+          >
+            <ToggleGroupItem value="all" className="text-xs h-7 px-2.5">
+              Todos <span className="ml-1 text-muted-foreground">{leads?.length ?? 0}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="custom" className="text-xs h-7 px-2.5">
+              ⚡ Playbook <span className="ml-1 text-muted-foreground">{customCount}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="default" className="text-xs h-7 px-2.5">
+              Padrão <span className="ml-1 text-muted-foreground">{defaultCount}</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+
       {/* Tabs: Agenda + Tarefas */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-3">
@@ -214,7 +262,7 @@ const Proximos = () => {
                   ) : (
                     <div className="grid gap-3">
                       {day.leads.map(lead => (
-                        <LeadCard key={lead.id} lead={lead} onMarkDone={handleMarkDone} onReschedule={handleReschedule} />
+                        <LeadCard key={lead.id} lead={lead} onMarkDone={handleMarkDone} onReschedule={handleReschedule} playbookSource={sourceByLead.get(lead.id)} />
                       ))}
                     </div>
                   )}
