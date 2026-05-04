@@ -199,6 +199,30 @@ const Proximos = () => {
         </div>
       )}
 
+      {/* Coach source filter */}
+      {!loading && (leads?.length ?? 0) > 0 && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Coach:</span>
+          <ToggleGroup
+            type="single"
+            size="sm"
+            value={coachFilter}
+            onValueChange={(v) => v && setCoachFilter(v as any)}
+            className="bg-secondary rounded-lg p-0.5"
+          >
+            <ToggleGroupItem value="all" className="text-xs h-7 px-2.5">
+              Todos <span className="ml-1 text-muted-foreground">{leads?.length ?? 0}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="custom" className="text-xs h-7 px-2.5">
+              ⚡ Playbook <span className="ml-1 text-muted-foreground">{customCount}</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="default" className="text-xs h-7 px-2.5">
+              Padrão <span className="ml-1 text-muted-foreground">{defaultCount}</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+      )}
+
       {/* Tabs: Agenda + Tarefas */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-3">
