@@ -42,6 +42,13 @@ const Leads = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const { data: leads, isLoading, error, refetch } = useActiveLeads();
 
+  // Batch-prefetch scripts for all stages currently in view (avoids N+1)
+  const stagesInView = useMemo(
+    () => Array.from(new Set((leads ?? []).map(l => mapLegacyStage(l.stage)))),
+    [leads],
+  );
+  useScriptsByStages(stagesInView);
+
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   if (error) {
