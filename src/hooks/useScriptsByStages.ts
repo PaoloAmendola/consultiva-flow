@@ -50,7 +50,7 @@ export function useScriptsByStages(stages: string[]) {
     }
   }, [query.data, queryClient]);
 
-  // Realtime: invalidate all script caches on any change
+  // Realtime: invalidate all script caches on any change + notify UI
   useEffect(() => {
     const channel = supabase
       .channel('scripts-realtime')
@@ -59,6 +59,17 @@ export function useScriptsByStages(stages: string[]) {
         { event: '*', schema: 'public', table: 'scripts' },
         () => {
           queryClient.invalidateQueries({ queryKey: ['scripts'] });
+          // Broadcast to listeners (e.g. SalesCoachCard) so they can show
+          // a visual "atualizado" indicator
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('scripts:revalidated', { detail: { at: Date.now() } }),
+            );
+          }
+          toast.info('Scripts atualizados', {
+            description: 'As recomendações refletem a versão mais recente.',
+            duration: 2500,
+          });
         },
       )
       .subscribe();
