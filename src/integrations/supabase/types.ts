@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_recommendations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          ignored_at: string | null
+          lead_id: string
+          payload: Json
+          source: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          ignored_at?: string | null
+          lead_id: string
+          payload: Json
+          source?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          ignored_at?: string | null
+          lead_id?: string
+          payload?: Json
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           code: string
@@ -99,6 +132,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      events_dead_letter: {
+        Row: {
+          attempts: number
+          data: Json
+          event_type: string
+          failed_at: string
+          id: string
+          last_error: string | null
+          lead_id: string | null
+          original_event_id: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts: number
+          data: Json
+          event_type: string
+          failed_at?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          original_event_id: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          data?: Json
+          event_type?: string
+          failed_at?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          original_event_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      events_outbox: {
+        Row: {
+          attempts: number
+          created_at: string
+          data: Json
+          event_type: string
+          id: string
+          last_error: string | null
+          lead_id: string | null
+          occurred_at: string
+          processed_at: string | null
+          trace_id: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          data?: Json
+          event_type: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          occurred_at?: string
+          processed_at?: string | null
+          trace_id?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          data?: Json
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          lead_id?: string | null
+          occurred_at?: string
+          processed_at?: string | null
+          trace_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       interactions: {
         Row: {
@@ -241,6 +352,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      nba_decisions: {
+        Row: {
+          acted_at: string | null
+          context: Json
+          dismissed_at: string | null
+          fired_at: string
+          id: string
+          lead_id: string
+          priority: string
+          rule_id: string
+          suggested_action: string | null
+          user_id: string
+        }
+        Insert: {
+          acted_at?: string | null
+          context?: Json
+          dismissed_at?: string | null
+          fired_at?: string
+          id?: string
+          lead_id: string
+          priority: string
+          rule_id: string
+          suggested_action?: string | null
+          user_id: string
+        }
+        Update: {
+          acted_at?: string | null
+          context?: Json
+          dismissed_at?: string | null
+          fired_at?: string
+          id?: string
+          lead_id?: string
+          priority?: string
+          rule_id?: string
+          suggested_action?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       nurture_tracks: {
         Row: {
@@ -468,6 +618,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      emit_event: {
+        Args: {
+          _data: Json
+          _event_type: string
+          _lead_id: string
+          _user_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
